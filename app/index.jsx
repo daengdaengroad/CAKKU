@@ -5,19 +5,29 @@ import CarCard from '../components/CarCard';
 import ServiceButton from '../components/ServiceButton';
 import { CONSUMABLES } from '../constants/carData';
 import { loadCar as loadCarFromFirestore, saveCar } from '../constants/carService';
+import { loadDiagnosisHistory } from '../constants/diagnosisService';
 
 export default function HomeScreen() {
   const router = useRouter();
   const [car, setCar] = useState(null);
   const [showMileageModal, setShowMileageModal] = useState(false);
   const [newMileage, setNewMileage] = useState('');
+  const [diagnoses, setDiagnoses] = useState([]);
 
   // 화면 포커스될 때마다 차량 정보 새로 불러오기
   useFocusEffect(
     useCallback(() => {
       loadCar();
+      fetchDiagnoses();
     }, [])
   );
+
+  const fetchDiagnoses = async () => {
+    try {
+      const history = await loadDiagnosisHistory();
+      setDiagnoses(history);
+    } catch (e) {}
+  };
 
   const loadCar = async () => {
     try {
@@ -101,6 +111,29 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>⚠️ 소모품 현황</Text>
           <ConsumableList mileage={car.mileage} />
+        </View>
+      )}
+
+      {/* AI 사진 진단 */}
+      <TouchableOpacity style={styles.diagnoseBanner} onPress={() => router.push('/diagnose')}>
+        <Text style={styles.diagnoseBannerTitle}>📸 지금 바로 무료 진단 시작</Text>
+        <Text style={styles.diagnoseBannerSub}>사진 한 장 · 30초 · 완전 무료</Text>
+      </TouchableOpacity>
+
+      {diagnoses.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🔍 최근 진단</Text>
+          {diagnoses.map((d) => (
+            <View key={d.id} style={styles.diagnosisItem}>
+              <View style={styles.diagnosisItemText}>
+                <Text style={styles.diagnosisIssue} numberOfLines={1}>{d.issue}</Text>
+                <Text style={styles.diagnosisDate}>
+                  {d.createdAt?.toDate ? d.createdAt.toDate().toLocaleDateString('ko-KR') : ''}
+                </Text>
+              </View>
+              <Text style={styles.diagnosisCost}>{d.costMin?.toLocaleString()}원~</Text>
+            </View>
+          ))}
         </View>
       )}
 
@@ -223,6 +256,32 @@ const styles = StyleSheet.create({
   },
   mileageUpdateText: { color: '#CCC', fontWeight: '700', fontSize: 14 },
   mileageUpdateSub: { color: '#555', fontSize: 12 },
+  diagnoseBanner: {
+    backgroundColor: '#1A1A2E',
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#FF4757',
+  },
+  diagnoseBannerTitle: { fontSize: 17, fontWeight: '800', color: '#FFF', marginBottom: 4 },
+  diagnoseBannerSub: { fontSize: 12, color: '#888' },
+  diagnosisItem: {
+    backgroundColor: '#1A1A2E',
+    borderRadius: 12,
+    padding: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#2A2A3E',
+  },
+  diagnosisItemText: { flex: 1, marginRight: 12 },
+  diagnosisIssue: { fontSize: 14, fontWeight: '700', color: '#FFF', marginBottom: 2 },
+  diagnosisDate: { fontSize: 11, color: '#888' },
+  diagnosisCost: { fontSize: 14, fontWeight: '800', color: '#FF4757' },
   section: { marginBottom: 24 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#FFF', marginBottom: 12 },
   consumableGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },

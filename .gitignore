@@ -30,6 +30,11 @@ yarn-error.*
 .DS_Store
 *.pem
 
+# Firebase
+firebase-debug.log
+firebase-debug.*.log
+.firebase/
+
 # local env files
 .env*.local
 
