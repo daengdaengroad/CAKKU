@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { loadCar as fetchCar, deleteCar } from '../constants/carService';
 
 export default function MypageScreen() {
   const router = useRouter();
@@ -13,8 +13,8 @@ export default function MypageScreen() {
 
   const loadCar = async () => {
     try {
-      const data = await AsyncStorage.getItem('myCar');
-      if (data) setCar(JSON.parse(data));
+      const carData = await fetchCar();
+      if (carData) setCar(carData);
     } catch (e) {}
   };
 
@@ -25,7 +25,7 @@ export default function MypageScreen() {
         text: '삭제',
         style: 'destructive',
         onPress: async () => {
-          await AsyncStorage.removeItem('myCar');
+          await deleteCar();
           setCar(null);
         },
       },

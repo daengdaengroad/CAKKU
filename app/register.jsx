@@ -1,8 +1,8 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CAR_BRANDS } from '../constants/carData';
+import { saveCar } from '../constants/carService';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -13,16 +13,25 @@ export default function RegisterScreen() {
   const [year, setYear] = useState('');
   const [mileage, setMileage] = useState('');
 
+  const [saving, setSaving] = useState(false);
+
   const handleSave = async () => {
     if (!brand || !model || !year || !mileage) {
       Alert.alert('입력 오류', '모든 항목을 입력해주세요.');
       return;
     }
     const car = { brand, model, year, mileage: parseInt(mileage), carNumber };
-    await AsyncStorage.setItem('myCar', JSON.stringify(car));
-    Alert.alert('등록 완료! 🎉', '내 차가 등록됐어요!', [
-      { text: '확인', onPress: () => router.back() },
-    ]);
+    try {
+      setSaving(true);
+      await saveCar(car);
+      Alert.alert('등록 완료! 🎉', '내 차가 등록됐어요!', [
+        { text: '확인', onPress: () => router.back() },
+      ]);
+    } catch (e) {
+      Alert.alert('오류', '저장에 실패했어요. 인터넷 연결을 확인해주세요.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -101,8 +110,8 @@ export default function RegisterScreen() {
           keyboardType="numeric"
         />
 
-        <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-          <Text style={styles.saveBtnText}>등록하기</Text>
+        <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
+          <Text style={styles.saveBtnText}>{saving ? '저장 중...' : '등록하기'}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

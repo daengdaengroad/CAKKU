@@ -1,6 +1,7 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { createServiceRequest } from '../constants/requestService';
 
 const SERVICE_TYPES = {
   reservation: { title: '정비소 예약 맡기기', icon: '📅', placeholder: '원하는 날짜, 정비 내용을 알려주세요.\n예) 3월 25일 오전, 엔진오일 교체' },
@@ -15,14 +16,22 @@ export default function RequestScreen() {
   const [message, setMessage] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!name || !phone || !message) {
       Alert.alert('입력 오류', '모든 항목을 입력해주세요.');
       return;
     }
-    // 카카오톡 오픈채팅 또는 전화 연결 (추후 실제 링크로 교체)
-    router.push('/complete');
+    try {
+      setSubmitting(true);
+      await createServiceRequest({ type, name, phone, message });
+      router.push('/complete');
+    } catch (e) {
+      Alert.alert('오류', '요청 전송에 실패했어요. 인터넷 연결을 확인해주세요.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleKakao = () => {
@@ -68,8 +77,8 @@ export default function RequestScreen() {
         />
       </View>
 
-      <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
-        <Text style={styles.submitBtnText}>요청 보내기</Text>
+      <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={submitting}>
+        <Text style={styles.submitBtnText}>{submitting ? '전송 중...' : '요청 보내기'}</Text>
       </TouchableOpacity>
 
       <View style={styles.divider}>

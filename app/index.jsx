@@ -1,10 +1,10 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Modal, TextInput } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import CarCard from '../components/CarCard';
 import ServiceButton from '../components/ServiceButton';
 import { CONSUMABLES } from '../constants/carData';
+import { loadCar as loadCarFromFirestore, saveCar } from '../constants/carService';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -21,9 +21,8 @@ export default function HomeScreen() {
 
   const loadCar = async () => {
     try {
-      const data = await AsyncStorage.getItem('myCar');
-      if (data) {
-        const carData = JSON.parse(data);
+      const carData = await loadCarFromFirestore();
+      if (carData) {
         setCar(carData);
         checkMileageUpdate(carData);
       }
@@ -59,7 +58,7 @@ export default function HomeScreen() {
       return;
     }
     const updated = { ...car, mileage: parseInt(newMileage), lastUpdated: new Date().toISOString() };
-    await AsyncStorage.setItem('myCar', JSON.stringify(updated));
+    await saveCar(updated);
     setCar(updated);
     setShowMileageModal(false);
     setNewMileage('');

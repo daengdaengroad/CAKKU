@@ -1,7 +1,7 @@
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { loadCar, saveCar } from '../constants/carService';
 
 export default function MileageScreen() {
   const router = useRouter();
@@ -9,12 +9,12 @@ export default function MileageScreen() {
   const [newMileage, setNewMileage] = useState('');
 
   useEffect(() => {
-    loadCar();
+    fetchCar();
   }, []);
 
-  const loadCar = async () => {
-    const data = await AsyncStorage.getItem('myCar');
-    if (data) setCar(JSON.parse(data));
+  const fetchCar = async () => {
+    const carData = await loadCar();
+    if (carData) setCar(carData);
   };
 
   const handleUpdate = async () => {
@@ -27,7 +27,7 @@ export default function MileageScreen() {
       mileage: parseInt(newMileage),
       lastUpdated: new Date().toISOString(),
     };
-    await AsyncStorage.setItem('myCar', JSON.stringify(updated));
+    await saveCar(updated);
     Alert.alert('업데이트 완료! ✅', '소모품 현황이 새로 계산됐어요.', [
       { text: '확인', onPress: () => router.back() },
     ]);
