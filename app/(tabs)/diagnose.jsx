@@ -104,6 +104,14 @@ export default function DiagnoseScreen() {
         throw new Error(result.errors?.diagnosis || 'AI 진단에 실패했어요.');
       }
 
+      if (result.diagnosis.isSeat === false) {
+        showAlert(
+          '시트 사진이 아닌 것 같아요',
+          result.diagnosis.summary || '자동차 시트가 잘 보이는 사진으로 다시 올려주세요.'
+        );
+        return;
+      }
+
       await AsyncStorage.setItem(
         'lastDiagnosis',
         JSON.stringify({
