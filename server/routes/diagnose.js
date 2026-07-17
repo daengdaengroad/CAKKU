@@ -6,8 +6,8 @@ const { searchNearbyShops } = require('../services/kakao');
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
-router.post('/diagnose', upload.single('image'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: '이미지가 없습니다' });
+router.post('/diagnose', upload.array('images', 5), async (req, res) => {
+  if (!req.files?.length) return res.status(400).json({ error: '이미지가 없습니다' });
 
   const { lat, lng, radius, car } = req.body;
   const latNum = Number(lat);
@@ -15,8 +15,10 @@ router.post('/diagnose', upload.single('image'), async (req, res) => {
 
   const [diagnosisResult, shopsResult] = await Promise.allSettled([
     diagnoseDamage({
-      imageBuffer: req.file.buffer,
-      mimeType: req.file.mimetype || 'image/jpeg',
+      images: req.files.map((file) => ({
+        buffer: file.buffer,
+        mimeType: file.mimetype || 'image/jpeg',
+      })),
       car,
     }),
     Number.isFinite(latNum) && Number.isFinite(lngNum)

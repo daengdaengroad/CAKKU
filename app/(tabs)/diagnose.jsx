@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet, Alert, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
@@ -7,12 +7,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../../constants/config';
 import { COLORS, FONT, RADIUS } from '../../constants/theme';
 
+const MAX_PHOTOS = 5;
+
 export default function DiagnoseScreen() {
   const router = useRouter();
-  const [asset, setAsset] = useState(null);
+  const [assets, setAssets] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
+  const remainingSlots = MAX_PHOTOS - assets.length;
+
   const handlePick = async (source) => {
+    if (remainingSlots <= 0) return;
+
     const permission =
       source === 'camera'
         ? await ImagePicker.requestCameraPermissionsAsync()
@@ -26,15 +32,23 @@ export default function DiagnoseScreen() {
     const result =
       source === 'camera'
         ? await ImagePicker.launchCameraAsync({ quality: 0.7 })
-        : await ImagePicker.launchImageLibraryAsync({ quality: 0.7 });
+        : await ImagePicker.launchImageLibraryAsync({
+            quality: 0.7,
+            allowsMultipleSelection: true,
+            selectionLimit: remainingSlots,
+          });
 
     if (!result.canceled && result.assets?.length) {
-      setAsset(result.assets[0]);
+      setAssets((prev) => [...prev, ...result.assets].slice(0, MAX_PHOTOS));
     }
   };
 
+  const removeAsset = (index) => {
+    setAssets((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async () => {
-    if (!asset) return;
+    if (assets.length === 0) return;
     setSubmitting(true);
     try {
       const locationPermission = await Location.requestForegroundPermissionsAsync();
@@ -57,15 +71,18 @@ export default function DiagnoseScreen() {
       } catch (e) {}
 
       const formData = new FormData();
-      if (Platform.OS === 'web') {
-        const blob = await (await fetch(asset.uri)).blob();
-        formData.append('image', blob, 'damage.jpg');
-      } else {
-        formData.append('image', {
-          uri: asset.uri,
-          name: 'damage.jpg',
-          type: asset.mimeType || 'image/jpeg',
-        });
+      for (let i = 0; i < assets.length; i++) {
+        const asset = assets[i];
+        if (Platform.OS === 'web') {
+          const blob = await (await fetch(asset.uri)).blob();
+          formData.append('images', blob, `damage-${i}.jpg`);
+        } else {
+          formData.append('images', {
+            uri: asset.uri,
+            name: `damage-${i}.jpg`,
+            type: asset.mimeType || 'image/jpeg',
+          });
+        }
       }
       formData.append('lat', String(position.coords.latitude));
       formData.append('lng', String(position.coords.longitude));
@@ -90,12 +107,12 @@ export default function DiagnoseScreen() {
         'lastDiagnosis',
         JSON.stringify({
           ...result,
-          photoUri: asset.uri,
+          photoUri: assets[0].uri,
           timestamp: new Date().toISOString(),
         })
       );
       router.push('/diagnose-result');
-      setAsset(null);
+      setAssets([]);
     } catch (err) {
       console.error('진단 요청 실패:', err);
       Alert.alert('진단 실패', err.message || '잠시 후 다시 시도해주세요.');
@@ -116,11 +133,14 @@ export default function DiagnoseScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>손상 부위 촬영</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>손상 부위 촬영</Text>
+        {assets.length > 0 && <Text style={styles.counter}>{assets.length}/{MAX_PHOTOS}장</Text>}
+      </View>
 
       <View style={styles.viewfinder}>
-        {asset ? (
-          <Image source={{ uri: asset.uri }} style={styles.viewfinderImage} />
+        {assets.length > 0 ? (
+          <Image source={{ uri: assets[0].uri }} style={styles.viewfinderImage} />
         ) : (
           <View style={styles.viewfinderPlaceholder}>
             <Text style={styles.viewfinderPlaceholderText}>손상 부위 사진</Text>
@@ -129,30 +149,55 @@ export default function DiagnoseScreen() {
         <View style={styles.guideFrame} pointerEvents="none" />
       </View>
 
-      <Text style={styles.guideText}>손상 부위를 프레임 안에 맞춰주세요</Text>
+      <Text style={styles.guideText}>
+        {assets.length > 0
+          ? '여러 각도로 찍을수록 더 정확하게 진단해요'
+          : '손상 부위를 프레임 안에 맞춰주세요'}
+      </Text>
 
-      {asset ? (
-        <View style={styles.actions}>
-          <TouchableOpacity style={styles.retakeBtn} onPress={() => setAsset(null)}>
-            <Text style={styles.retakeBtnText}>다시 촬영</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
-            <Text style={styles.submitBtnText}>AI 진단 시작</Text>
-          </TouchableOpacity>
+      {assets.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbStrip} contentContainerStyle={styles.thumbStripContent}>
+          {assets.map((a, i) => (
+            <View key={a.assetId || a.uri || i} style={styles.thumbWrap}>
+              <Image source={{ uri: a.uri }} style={styles.thumb} />
+              <TouchableOpacity style={styles.thumbRemove} onPress={() => removeAsset(i)}>
+                <Text style={styles.thumbRemoveText}>×</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </ScrollView>
+      )}
+
+      {assets.length === 0 && (
+        <View style={styles.tips}>
+          <Text style={styles.tip}>· 밝은 곳에서 촬영하세요</Text>
+          <Text style={styles.tip}>· 30cm 거리를 유지하세요</Text>
+          <Text style={styles.tip}>· 사진은 최대 {MAX_PHOTOS}장까지 추가할 수 있어요</Text>
         </View>
-      ) : (
+      )}
+
+      {remainingSlots > 0 && (
         <>
-          <View style={styles.tips}>
-            <Text style={styles.tip}>· 밝은 곳에서 촬영하세요</Text>
-            <Text style={styles.tip}>· 30cm 거리를 유지하세요</Text>
-          </View>
           <TouchableOpacity onPress={() => handlePick('gallery')}>
-            <Text style={styles.galleryLink}>갤러리에서 선택</Text>
+            <Text style={styles.galleryLink}>
+              {assets.length > 0 ? '갤러리에서 더 추가하기' : '갤러리에서 선택'}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.shutterWrap} onPress={() => handlePick('camera')}>
             <View style={styles.shutter} />
           </TouchableOpacity>
         </>
+      )}
+
+      {assets.length > 0 && (
+        <View style={styles.actions}>
+          <TouchableOpacity style={styles.retakeBtn} onPress={() => setAssets([])}>
+            <Text style={styles.retakeBtnText}>전체 다시 선택</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
+            <Text style={styles.submitBtnText}>AI 진단 시작</Text>
+          </TouchableOpacity>
+        </View>
       )}
     </View>
   );
@@ -160,7 +205,9 @@ export default function DiagnoseScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg, padding: 22, paddingBottom: 26 },
-  title: { fontFamily: FONT.bodyBold, fontSize: 15, color: COLORS.ink, marginBottom: 14 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  title: { fontFamily: FONT.bodyBold, fontSize: 15, color: COLORS.ink },
+  counter: { fontFamily: FONT.bodySemi, fontSize: 12.5, color: COLORS.accent },
   viewfinder: {
     flex: 1,
     borderRadius: 20,
@@ -189,6 +236,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 14,
   },
+  thumbStrip: { marginTop: 14, maxHeight: 60 },
+  thumbStripContent: { gap: 10, paddingRight: 4 },
+  thumbWrap: { position: 'relative' },
+  thumb: { width: 56, height: 56, borderRadius: RADIUS.thumb, backgroundColor: COLORS.viewfinderBg },
+  thumbRemove: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.dark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  thumbRemoveText: { color: COLORS.onDark, fontSize: 13, fontFamily: FONT.bodyBold, lineHeight: 14 },
   tips: { marginTop: 12, gap: 6 },
   tip: { fontFamily: FONT.bodyMed, fontSize: 11.5, color: COLORS.inkMuted },
   galleryLink: {
