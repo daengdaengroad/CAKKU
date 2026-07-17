@@ -23,6 +23,7 @@ export default function ShopListItem({ shop }) {
           <Text style={styles.distance}>{formatDistance(shop.distanceMeters)}</Text>
         </View>
         <Text style={styles.address}>{shop.address}</Text>
+        {shop.phone ? <Text style={styles.phone}>{shop.phone}</Text> : null}
       </View>
       {shop.phone ? (
         <TouchableOpacity style={styles.callBtn} onPress={handleCall} activeOpacity={0.8}>
@@ -49,6 +50,7 @@ const styles = StyleSheet.create({
   name: { fontFamily: FONT.bodyBold, fontSize: 14, color: COLORS.ink },
   distance: { fontFamily: FONT.bodyBold, fontSize: 12.5, color: COLORS.accent },
   address: { fontFamily: FONT.bodyMed, fontSize: 11.5, color: COLORS.inkMuted },
+  phone: { fontFamily: FONT.bodyMed, fontSize: 11.5, color: COLORS.inkMuted, marginTop: 2 },
   callBtn: {
     backgroundColor: COLORS.accentSoft,
     borderRadius: RADIUS.button,

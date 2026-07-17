@@ -1,13 +1,14 @@
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Location from 'expo-location';
 import ShopListItem from '../../components/ShopListItem';
+import { API_BASE_URL } from '../../constants/config';
 import { COLORS, FONT, RADIUS } from '../../constants/theme';
 
 export default function ShopsScreen() {
-  const router = useRouter();
-  const [shops, setShops] = useState(null);
+  const [status, setStatus] = useState('loading'); // loading | denied | error | ready
+  const [shops, setShops] = useState([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -16,28 +17,65 @@ export default function ShopsScreen() {
   );
 
   const loadShops = async () => {
+    setStatus('loading');
     try {
-      const data = await AsyncStorage.getItem('lastDiagnosis');
-      if (data) {
-        const parsed = JSON.parse(data);
-        setShops(parsed.shops || []);
-      } else {
-        setShops([]);
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (!permission.granted) {
+        setStatus('denied');
+        return;
       }
-    } catch (e) {
-      setShops([]);
+
+      const position = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Low,
+      });
+
+      const url = `${API_BASE_URL}/api/shops?lat=${position.coords.latitude}&lng=${position.coords.longitude}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('업체 검색에 실패했어요');
+
+      const result = await response.json();
+      setShops(result.shops || []);
+      setStatus('ready');
+    } catch (err) {
+      console.error('업체 검색 실패:', err);
+      setStatus('error');
     }
   };
 
-  if (shops === null) return null;
+  if (status === 'loading') {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={COLORS.accent} />
+        <Text style={styles.loadingText}>현재 위치 기준 업체를 찾고 있어요...</Text>
+      </View>
+    );
+  }
+
+  if (status === 'denied' || status === 'error') {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.emptyText}>
+          {status === 'denied' ? '위치 권한이 필요해요' : '업체를 불러오지 못했어요'}
+        </Text>
+        <Text style={styles.emptySub}>
+          {status === 'denied'
+            ? '주변 정비소를 찾으려면 위치 접근을 허용해주세요'
+            : '잠시 후 다시 시도해주세요'}
+        </Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={loadShops}>
+          <Text style={styles.retryBtnText}>다시 시도</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   if (shops.length === 0) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>먼저 AI 진단을 진행해주세요</Text>
-        <Text style={styles.emptySub}>진단 결과를 바탕으로 주변 정비소를 찾아드려요</Text>
-        <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/diagnose')}>
-          <Text style={styles.emptyBtnText}>AI 진단하러 가기</Text>
+      <View style={styles.centerContainer}>
+        <Text style={styles.emptyText}>주변에서 정비소를 찾지 못했어요</Text>
+        <Text style={styles.emptySub}>반경을 넓혀 다시 시도해보세요</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={loadShops}>
+          <Text style={styles.retryBtnText}>다시 찾기</Text>
         </TouchableOpacity>
       </View>
     );
@@ -47,7 +85,7 @@ export default function ShopsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>주변 수리업체</Text>
-        <Text style={styles.subtitle}>내 위치 기준 · 가까운 순</Text>
+        <Text style={styles.subtitle}>내 현재 위치 기준 · 가까운 순</Text>
       </View>
 
       <View style={styles.filterRow}>
@@ -80,13 +118,14 @@ const styles = StyleSheet.create({
   },
   filterChipActiveText: { fontFamily: FONT.bodyBold, fontSize: 11, color: COLORS.onDark },
   list: { paddingHorizontal: 22, paddingBottom: 30 },
-  emptyContainer: {
+  centerContainer: {
     flex: 1,
     backgroundColor: COLORS.bg,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 32,
   },
+  loadingText: { fontFamily: FONT.bodyMed, fontSize: 13, color: COLORS.inkMuted, marginTop: 16 },
   emptyText: { fontFamily: FONT.bodyBold, fontSize: 15, color: COLORS.ink, marginBottom: 6, textAlign: 'center' },
   emptySub: {
     fontFamily: FONT.bodyMed,
@@ -95,11 +134,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 22,
   },
-  emptyBtn: {
+  retryBtn: {
     backgroundColor: COLORS.dark,
     borderRadius: RADIUS.button,
     paddingVertical: 14,
     paddingHorizontal: 26,
   },
-  emptyBtnText: { fontFamily: FONT.bodyBold, fontSize: 14, color: COLORS.onDark },
+  retryBtnText: { fontFamily: FONT.bodyBold, fontSize: 14, color: COLORS.onDark },
 });

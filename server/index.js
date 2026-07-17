@@ -4,6 +4,7 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const diagnoseRouter = require('./routes/diagnose');
+const shopsRouter = require('./routes/shops');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -18,6 +19,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/api', diagnoseRouter);
+app.use('/api', shopsRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
