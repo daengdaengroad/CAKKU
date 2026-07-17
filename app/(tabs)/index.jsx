@@ -30,6 +30,7 @@ export default function HomeScreen() {
         <View style={styles.logoDot} />
         <Text style={styles.logoText}>CarCare</Text>
       </View>
+      <Text style={styles.tagline}>내 차 시트 관리, AI로 더 쉽게</Text>
 
       <View style={styles.hero}>
         <Text style={styles.heroLabel}>AI 시트 손상 진단</Text>
@@ -55,9 +56,10 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   content: { padding: 22, paddingBottom: 40 },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 20 },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 6 },
   logoDot: { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.accent },
   logoText: { fontFamily: FONT.display, fontSize: 19, color: COLORS.ink, letterSpacing: 0.3 },
+  tagline: { fontFamily: FONT.bodyMed, fontSize: 12.5, color: COLORS.inkMuted, marginBottom: 20 },
   hero: {
     backgroundColor: COLORS.surface,
     borderWidth: 1,
