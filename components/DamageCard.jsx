@@ -16,7 +16,9 @@ export default function DamageCard({ damage }) {
         ) : null}
       </View>
       {damage.detail ? <Text style={styles.detail}>{damage.detail}</Text> : null}
-      <Text style={styles.price}>{Number(damage.price || 0).toLocaleString()}원</Text>
+      <Text style={styles.price}>
+        {Number(damage.priceMin || 0).toLocaleString()} ~ {Number(damage.priceMax || 0).toLocaleString()}원
+      </Text>
     </View>
   );
 }

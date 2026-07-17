@@ -37,13 +37,14 @@ export default function DiagnoseResultScreen() {
 
   const { diagnosis, errors = {}, photoUri } = result;
   const damages = diagnosis?.damages || [];
-  const total = damages.reduce((sum, d) => sum + (Number(d.price) || 0), 0);
+  const totalMin = damages.reduce((sum, d) => sum + (Number(d.priceMin) || 0), 0);
+  const totalMax = damages.reduce((sum, d) => sum + (Number(d.priceMax) || 0), 0);
   const severityPercent = SEVERITY_PERCENT[diagnosis?.severity] ?? 0.6;
 
   const handleReserve = () => {
     const prefill = [
       diagnosis?.summary && `AI 진단: ${diagnosis.summary}`,
-      total > 0 && `예상 수리비: 약 ${total.toLocaleString()}원`,
+      totalMax > 0 && `예상 수리비: 약 ${totalMin.toLocaleString()}~${totalMax.toLocaleString()}원`,
       damages.length > 0 && `손상 부위: ${damages.map((d) => d.name).join(', ')}`,
     ]
       .filter(Boolean)
@@ -84,9 +85,15 @@ export default function DiagnoseResultScreen() {
 
             <View>
               <Text style={styles.fieldLabel}>예상 수리비</Text>
-              <Text style={styles.priceValue}>{total.toLocaleString()}원</Text>
+              <Text style={styles.priceValue}>
+                {totalMin.toLocaleString()} ~ {totalMax.toLocaleString()}원
+              </Text>
             </View>
           </View>
+
+          <Text style={styles.disclaimer}>
+            AI가 사진을 보고 추정한 참고용 금액이에요. 실제 정비소 견적과 다를 수 있어요.
+          </Text>
 
           {damages.length > 0 && (
             <View style={styles.section}>
@@ -131,13 +138,20 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.cardLg,
     padding: 20,
     gap: 16,
-    marginBottom: 24,
+    marginBottom: 10,
   },
   fieldLabel: { fontFamily: FONT.bodySemi, fontSize: 11, color: COLORS.inkMuted, letterSpacing: 0.5, marginBottom: 6 },
   fieldValue: { fontFamily: FONT.bodyBold, fontSize: 15, color: COLORS.ink, lineHeight: 21 },
   severityTrack: { height: 7, borderRadius: 4, backgroundColor: COLORS.border },
   severityFill: { height: '100%', borderRadius: 4, backgroundColor: COLORS.severityMid },
   priceValue: { fontFamily: FONT.display, fontSize: 19, color: COLORS.ink },
+  disclaimer: {
+    fontFamily: FONT.bodyMed,
+    fontSize: 11,
+    color: COLORS.inkMuted,
+    marginBottom: 24,
+    lineHeight: 16,
+  },
   section: { marginBottom: 24 },
   sectionTitle: { fontFamily: FONT.bodyBold, fontSize: 14, color: COLORS.ink, marginBottom: 12 },
   errorBox: {
