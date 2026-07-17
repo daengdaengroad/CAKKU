@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet, Alert, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
@@ -56,11 +56,16 @@ export default function DiagnoseScreen() {
       } catch (e) {}
 
       const formData = new FormData();
-      formData.append('image', {
-        uri: asset.uri,
-        name: 'damage.jpg',
-        type: asset.mimeType || 'image/jpeg',
-      });
+      if (Platform.OS === 'web') {
+        const blob = await (await fetch(asset.uri)).blob();
+        formData.append('image', blob, 'damage.jpg');
+      } else {
+        formData.append('image', {
+          uri: asset.uri,
+          name: 'damage.jpg',
+          type: asset.mimeType || 'image/jpeg',
+        });
+      }
       formData.append('lat', String(position.coords.latitude));
       formData.append('lng', String(position.coords.longitude));
       if (car) formData.append('car', car);
@@ -86,6 +91,7 @@ export default function DiagnoseScreen() {
       );
       router.replace('/diagnose-result');
     } catch (err) {
+      console.error('진단 요청 실패:', err);
       Alert.alert('진단 실패', err.message || '잠시 후 다시 시도해주세요.');
     } finally {
       setSubmitting(false);
