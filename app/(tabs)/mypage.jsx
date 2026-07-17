@@ -9,12 +9,16 @@ import { showAlert } from '../../utils/alert';
 export default function MypageScreen() {
   const router = useRouter();
   const [car, setCar] = useState(null);
+  const [records, setRecords] = useState({});
   const [showMileageModal, setShowMileageModal] = useState(false);
   const [newMileage, setNewMileage] = useState('');
+  const [editingItem, setEditingItem] = useState(null);
+  const [editKm, setEditKm] = useState('');
 
   useFocusEffect(
     useCallback(() => {
       loadCar();
+      loadRecords();
     }, [])
   );
 
@@ -22,6 +26,13 @@ export default function MypageScreen() {
     try {
       const data = await AsyncStorage.getItem('myCar');
       if (data) setCar(JSON.parse(data));
+    } catch (e) {}
+  };
+
+  const loadRecords = async () => {
+    try {
+      const data = await AsyncStorage.getItem('consumableRecords');
+      if (data) setRecords(JSON.parse(data));
     } catch (e) {}
   };
 
@@ -33,7 +44,9 @@ export default function MypageScreen() {
         style: 'destructive',
         onPress: async () => {
           await AsyncStorage.removeItem('myCar');
+          await AsyncStorage.removeItem('consumableRecords');
           setCar(null);
+          setRecords({});
         },
       },
     ]);
@@ -54,6 +67,28 @@ export default function MypageScreen() {
     setShowMileageModal(false);
     setNewMileage('');
     showAlert('업데이트 완료', '소모품 현황이 새로 계산됐어요.');
+  };
+
+  const openEditItem = (item) => {
+    setEditingItem(item);
+    setEditKm(String(records[item.name]?.lastReplacedKm ?? ''));
+  };
+
+  const handleSaveRecord = async () => {
+    if (!editKm || isNaN(editKm)) {
+      showAlert('입력 오류', '올바른 키로수를 입력해주세요.');
+      return;
+    }
+    const kmValue = parseInt(editKm);
+    if (kmValue > car.mileage) {
+      showAlert('입력 오류', '현재 주행거리보다 클 수 없어요.');
+      return;
+    }
+    const updated = { ...records, [editingItem.name]: { lastReplacedKm: kmValue } };
+    await AsyncStorage.setItem('consumableRecords', JSON.stringify(updated));
+    setRecords(updated);
+    setEditingItem(null);
+    setEditKm('');
   };
 
   return (
@@ -90,7 +125,8 @@ export default function MypageScreen() {
               <Text style={styles.mileageLink}>주행거리 업데이트</Text>
             </TouchableOpacity>
           </View>
-          <ConsumableList mileage={car.mileage} />
+          <Text style={styles.consumableHint}>항목을 눌러 교체 시점의 키로수를 수정할 수 있어요</Text>
+          <ConsumableList mileage={car.mileage} records={records} onEditItem={openEditItem} />
         </View>
       )}
 
@@ -152,15 +188,49 @@ export default function MypageScreen() {
           </View>
         </View>
       </Modal>
+
+      <Modal visible={!!editingItem} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>{editingItem?.name} 교체 키로수</Text>
+            <Text style={styles.modalDesc}>마지막으로 교체했을 때의 주행거리를 입력해주세요</Text>
+            <Text style={styles.modalCurrent}>현재 주행거리: {car?.mileage?.toLocaleString()}km</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="예) 35000"
+              placeholderTextColor={COLORS.inkMuted}
+              value={editKm}
+              onChangeText={setEditKm}
+              keyboardType="numeric"
+              autoFocus
+            />
+            <View style={styles.modalBtns}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => { setEditingItem(null); setEditKm(''); }}
+              >
+                <Text style={styles.modalCancelText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSaveRecord}>
+                <Text style={styles.modalSaveText}>저장</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
 
-function ConsumableList({ mileage }) {
+function ConsumableList({ mileage, records, onEditItem }) {
   return (
     <View style={styles.consumableGrid}>
       {CONSUMABLES.filter((item) => item.intervalKm > 0).map((item) => {
-        const remaining = item.intervalKm - (mileage % item.intervalKm);
+        const lastReplacedKm = records[item.name]?.lastReplacedKm;
+        const remaining =
+          lastReplacedKm != null
+            ? item.intervalKm - (mileage - lastReplacedKm)
+            : item.intervalKm - (mileage % item.intervalKm);
         const percent = remaining / item.intervalKm;
         const status = remaining <= 0 ? 'overdue' : percent <= 0.2 ? 'urgent' : percent <= 0.4 ? 'warning' : 'ok';
         const statusColor = {
@@ -172,13 +242,13 @@ function ConsumableList({ mileage }) {
         const statusText = { overdue: '즉시 교체', urgent: '곧 교체', warning: '점검 필요', ok: '정상' };
 
         return (
-          <View key={item.name} style={styles.consumableItem}>
+          <TouchableOpacity key={item.name} style={styles.consumableItem} onPress={() => onEditItem(item)}>
             <Text style={styles.consumableName}>{item.name}</Text>
             <Text style={[styles.consumableRemaining, { color: statusColor[status] }]}>
               {status === 'overdue' ? '즉시 교체 필요' : `${remaining.toLocaleString()}km 남음`}
             </Text>
             <Text style={styles.consumableStatus}>{statusText[status]}</Text>
-          </View>
+          </TouchableOpacity>
         );
       })}
     </View>
@@ -200,6 +270,7 @@ const styles = StyleSheet.create({
   },
   consumableHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0 },
   mileageLink: { fontFamily: FONT.bodySemi, fontSize: 11.5, color: COLORS.accent, marginBottom: 12 },
+  consumableHint: { fontFamily: FONT.bodyMed, fontSize: 11, color: COLORS.inkMuted, marginBottom: 12 },
   carBox: {
     backgroundColor: COLORS.surface,
     borderWidth: 1,
