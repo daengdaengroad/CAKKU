@@ -15,11 +15,17 @@ async function findPhotoRef(name, address, lat, lng) {
 
   try {
     const res = await fetch(url);
-    if (!res.ok) return null;
     const data = await res.json();
+
+    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+      console.error(`구글 Places 조회 실패 [${name}]: ${data.status} - ${data.error_message || ''}`);
+      return null;
+    }
+
     const photoRef = data.candidates?.[0]?.photos?.[0]?.photo_reference;
     return photoRef || null;
   } catch (err) {
+    console.error(`구글 Places 조회 예외 [${name}]:`, err.message);
     return null;
   }
 }
