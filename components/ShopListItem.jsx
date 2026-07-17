@@ -1,4 +1,5 @@
-import { TouchableOpacity, View, Text, StyleSheet, Linking } from 'react-native';
+import { TouchableOpacity, View, Text, Image, StyleSheet, Linking } from 'react-native';
+import { API_BASE_URL } from '../constants/config';
 import { COLORS, FONT, RADIUS } from '../constants/theme';
 
 function formatDistance(meters) {
@@ -17,19 +18,27 @@ export default function ShopListItem({ shop }) {
 
   return (
     <TouchableOpacity style={styles.item} onPress={handlePress} activeOpacity={0.8}>
-      <View style={styles.textArea}>
-        <View style={styles.nameRow}>
-          <Text style={styles.name}>{shop.name}</Text>
-          <Text style={styles.distance}>{formatDistance(shop.distanceMeters)}</Text>
+      {shop.photoRef && (
+        <Image
+          source={{ uri: `${API_BASE_URL}/api/shop-photo?ref=${encodeURIComponent(shop.photoRef)}&w=400` }}
+          style={styles.photo}
+        />
+      )}
+      <View style={styles.row}>
+        <View style={styles.textArea}>
+          <View style={styles.nameRow}>
+            <Text style={styles.name}>{shop.name}</Text>
+            <Text style={styles.distance}>{formatDistance(shop.distanceMeters)}</Text>
+          </View>
+          <Text style={styles.address}>{shop.address}</Text>
+          {shop.phone ? <Text style={styles.phone}>{shop.phone}</Text> : null}
         </View>
-        <Text style={styles.address}>{shop.address}</Text>
-        {shop.phone ? <Text style={styles.phone}>{shop.phone}</Text> : null}
+        {shop.phone ? (
+          <TouchableOpacity style={styles.callBtn} onPress={handleCall} activeOpacity={0.8}>
+            <Text style={styles.callBtnText}>전화</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
-      {shop.phone ? (
-        <TouchableOpacity style={styles.callBtn} onPress={handleCall} activeOpacity={0.8}>
-          <Text style={styles.callBtnText}>전화</Text>
-        </TouchableOpacity>
-      ) : null}
     </TouchableOpacity>
   );
 }
@@ -40,11 +49,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: RADIUS.card,
-    padding: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
+    overflow: 'hidden',
     marginBottom: 11,
   },
+  photo: { width: '100%', height: 120, backgroundColor: COLORS.viewfinderBg },
+  row: { flexDirection: 'row', alignItems: 'center', padding: 15 },
   textArea: { flex: 1, marginRight: 10 },
   nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 },
   name: { fontFamily: FONT.bodyBold, fontSize: 14, color: COLORS.ink },
