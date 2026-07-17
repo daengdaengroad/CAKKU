@@ -9,6 +9,7 @@ import { COLORS, FONT, RADIUS } from '../../constants/theme';
 export default function ShopsScreen() {
   const [status, setStatus] = useState('loading'); // loading | denied | error | ready
   const [shops, setShops] = useState([]);
+  const [regionName, setRegionName] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -35,6 +36,7 @@ export default function ShopsScreen() {
 
       const result = await response.json();
       setShops(result.shops || []);
+      setRegionName(result.regionName || '');
       setStatus('ready');
     } catch (err) {
       console.error('업체 검색 실패:', err);
@@ -85,7 +87,7 @@ export default function ShopsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>주변 수리업체</Text>
-        <Text style={styles.subtitle}>내 현재 위치 기준 · 가까운 순</Text>
+        <Text style={styles.subtitle}>{regionName ? `${regionName} 기준` : '내 현재 위치 기준'} · 가까운 순</Text>
       </View>
 
       <View style={styles.filterRow}>

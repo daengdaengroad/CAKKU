@@ -1,5 +1,5 @@
 const express = require('express');
-const { searchNearbyShops } = require('../services/kakao');
+const { searchNearbyShops, reverseGeocode } = require('../services/kakao');
 
 const router = express.Router();
 
@@ -13,8 +13,11 @@ router.get('/shops', async (req, res) => {
   }
 
   try {
-    const shops = await searchNearbyShops(latNum, lngNum, radius ? Number(radius) : undefined);
-    res.json({ shops });
+    const [shops, regionName] = await Promise.all([
+      searchNearbyShops(latNum, lngNum, radius ? Number(radius) : undefined),
+      reverseGeocode(latNum, lngNum).catch(() => null),
+    ]);
+    res.json({ shops, regionName });
   } catch (err) {
     res.status(500).json({ error: err.message || '업체 검색에 실패했습니다' });
   }
