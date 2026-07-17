@@ -109,6 +109,12 @@ export default function HomeScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>🛎️ 에이전시 서비스</Text>
         <ServiceButton
+          icon="📸"
+          title="사고/손상 AI 진단"
+          desc="사진 찍으면 AI가 즉시 진단해드려요"
+          onPress={() => router.push('/diagnose')}
+        />
+        <ServiceButton
           icon="📅"
           title="정비소 예약 맡기기"
           desc="원하는 날짜에 대신 예약해드려요"

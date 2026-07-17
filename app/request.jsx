@@ -10,9 +10,9 @@ const SERVICE_TYPES = {
 
 export default function RequestScreen() {
   const router = useRouter();
-  const { type } = useLocalSearchParams();
+  const { type, prefill } = useLocalSearchParams();
   const service = SERVICE_TYPES[type] || SERVICE_TYPES.consult;
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(prefill || '');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
 

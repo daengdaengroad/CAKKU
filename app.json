@@ -9,7 +9,12 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "손상 부위를 촬영해서 AI 진단을 받기 위해 카메라 접근 권한이 필요해요.",
+        "NSPhotoLibraryUsageDescription": "손상 사진을 선택해서 AI 진단을 받기 위해 사진 라이브러리 접근 권한이 필요해요.",
+        "NSLocationWhenInUseUsageDescription": "주변 정비소를 찾기 위해 위치 접근 권한이 필요해요."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -37,6 +42,19 @@
           "dark": {
             "backgroundColor": "#000000"
           }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "손상 사진을 선택해서 AI 진단을 받기 위해 사진 라이브러리 접근 권한이 필요해요.",
+          "cameraPermission": "손상 부위를 촬영해서 AI 진단을 받기 위해 카메라 접근 권한이 필요해요."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "주변 정비소를 찾기 위해 위치 접근 권한이 필요해요."
         }
       ]
     ],
