@@ -1,4 +1,5 @@
 import { TouchableOpacity, View, Text, StyleSheet, Linking } from 'react-native';
+import { COLORS, FONT, RADIUS } from '../constants/theme';
 
 function formatDistance(meters) {
   if (meters == null) return '';
@@ -25,7 +26,7 @@ export default function ShopListItem({ shop }) {
       </View>
       {shop.phone ? (
         <TouchableOpacity style={styles.callBtn} onPress={handleCall} activeOpacity={0.8}>
-          <Text style={styles.callBtnText}>📞</Text>
+          <Text style={styles.callBtnText}>전화</Text>
         </TouchableOpacity>
       ) : null}
     </TouchableOpacity>
@@ -34,27 +35,25 @@ export default function ShopListItem({ shop }) {
 
 const styles = StyleSheet.create({
   item: {
-    backgroundColor: '#1A1A2E',
-    borderRadius: 14,
-    padding: 14,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.card,
+    padding: 15,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#2A2A3E',
+    marginBottom: 11,
   },
   textArea: { flex: 1, marginRight: 10 },
-  nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  name: { fontSize: 15, fontWeight: '700', color: '#FFF' },
-  distance: { fontSize: 12, color: '#FF4757', fontWeight: '700' },
-  address: { fontSize: 12, color: '#888' },
+  nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 },
+  name: { fontFamily: FONT.bodyBold, fontSize: 14, color: COLORS.ink },
+  distance: { fontFamily: FONT.bodyBold, fontSize: 12.5, color: COLORS.accent },
+  address: { fontFamily: FONT.bodyMed, fontSize: 11.5, color: COLORS.inkMuted },
   callBtn: {
-    backgroundColor: '#2A2A3E',
-    borderRadius: 10,
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: COLORS.accentSoft,
+    borderRadius: RADIUS.button,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
   },
-  callBtnText: { fontSize: 18 },
+  callBtnText: { fontFamily: FONT.bodyBold, fontSize: 12, color: COLORS.accent },
 });

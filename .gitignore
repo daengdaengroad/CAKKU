@@ -40,6 +40,9 @@ server/.env
 
 app-example
 
+# design handoff source assets (not app code)
+*.zip
+
 # generated native folders
 /ios
 /android

@@ -1,19 +1,20 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { COLORS, FONT, RADIUS } from '../constants/theme';
 
 export default function CompleteScreen() {
   const router = useRouter();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.checkIcon}>✅</Text>
-      <Text style={styles.title}>요청이 접수됐어요!</Text>
+      <View style={styles.iconCircle} />
+      <Text style={styles.title}>예약이 완료됐어요</Text>
       <Text style={styles.subtitle}>
         담당 매니저가 확인 후{'\n'}빠르게 연락드릴게요
       </Text>
 
       <View style={styles.infoBox}>
-        <Text style={styles.infoTitle}>📋 처리 순서</Text>
+        <Text style={styles.infoTitle}>처리 순서</Text>
         <View style={styles.step}>
           <View style={[styles.stepDot, styles.stepDotActive]} />
           <Text style={styles.stepText}>요청 접수 완료</Text>
@@ -30,10 +31,10 @@ export default function CompleteScreen() {
         </View>
       </View>
 
-      <Text style={styles.timeText}>⏱️ 평균 처리 시간: 2시간 이내</Text>
+      <Text style={styles.timeText}>평균 처리 시간: 2시간 이내</Text>
 
       <TouchableOpacity style={styles.homeBtn} onPress={() => router.replace('/')}>
-        <Text style={styles.homeBtnText}>홈으로 돌아가기</Text>
+        <Text style={styles.homeBtnText}>홈으로</Text>
       </TouchableOpacity>
     </View>
   );
@@ -42,41 +43,37 @@ export default function CompleteScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0C10',
+    backgroundColor: COLORS.bg,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 28,
+    padding: 30,
   },
-  checkIcon: { fontSize: 72, marginBottom: 16 },
-  title: { fontSize: 26, fontWeight: '900', color: '#FFF', marginBottom: 10, textAlign: 'center' },
-  subtitle: { fontSize: 15, color: '#888', textAlign: 'center', lineHeight: 24, marginBottom: 36 },
+  iconCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: COLORS.accent, marginBottom: 18 },
+  title: { fontFamily: FONT.display, fontSize: 20, color: COLORS.ink, marginBottom: 10, textAlign: 'center' },
+  subtitle: { fontFamily: FONT.bodyMed, fontSize: 13, color: COLORS.inkMuted, textAlign: 'center', lineHeight: 22, marginBottom: 32 },
   infoBox: {
-    backgroundColor: '#1A1A2E',
-    borderRadius: 16,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.cardLg,
     padding: 20,
     width: '100%',
     marginBottom: 20,
   },
-  infoTitle: { fontSize: 15, fontWeight: '700', color: '#FFF', marginBottom: 16 },
+  infoTitle: { fontFamily: FONT.bodyBold, fontSize: 14, color: COLORS.ink, marginBottom: 16 },
   step: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  stepDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#333',
-    marginLeft: 4,
-  },
-  stepDotActive: { backgroundColor: '#FF4757' },
-  stepLine: { width: 2, height: 16, backgroundColor: '#333', marginLeft: 9 },
-  stepText: { fontSize: 14, color: '#FFF', fontWeight: '600' },
-  stepTextPending: { color: '#555' },
-  timeText: { fontSize: 13, color: '#888', marginBottom: 32 },
+  stepDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: COLORS.border, marginLeft: 4 },
+  stepDotActive: { backgroundColor: COLORS.accent },
+  stepLine: { width: 2, height: 16, backgroundColor: COLORS.border, marginLeft: 9 },
+  stepText: { fontFamily: FONT.bodySemi, fontSize: 13.5, color: COLORS.ink },
+  stepTextPending: { color: COLORS.inkMuted },
+  timeText: { fontFamily: FONT.bodyMed, fontSize: 12.5, color: COLORS.inkMuted, marginBottom: 32 },
   homeBtn: {
-    backgroundColor: '#FF4757',
-    borderRadius: 14,
-    padding: 18,
+    backgroundColor: COLORS.dark,
+    borderRadius: RADIUS.button,
+    padding: 13,
     alignItems: 'center',
-    width: '100%',
+    paddingHorizontal: 28,
   },
-  homeBtnText: { color: '#FFF', fontSize: 17, fontWeight: '800' },
+  homeBtnText: { fontFamily: FONT.bodyBold, fontSize: 14, color: COLORS.onDark },
 });

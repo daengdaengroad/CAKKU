@@ -1,11 +1,12 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { COLORS, FONT, RADIUS } from '../constants/theme';
 
 const SERVICE_TYPES = {
-  reservation: { title: '정비소 예약 맡기기', icon: '📅', placeholder: '원하는 날짜, 정비 내용을 알려주세요.\n예) 3월 25일 오전, 엔진오일 교체' },
-  estimate: { title: '견적서 봐주세요', icon: '🧾', placeholder: '정비소에서 받은 견적 내용을 입력해주세요.\n예) 엔진오일 교체 15만원, 에어필터 5만원' },
-  consult: { title: '매니저 상담', icon: '💬', placeholder: '궁금한 점이나 상담 내용을 자유롭게 적어주세요.' },
+  reservation: { title: '정비소 예약 맡기기', placeholder: '원하는 날짜, 정비 내용을 알려주세요.\n예) 3월 25일 오전, 엔진오일 교체' },
+  estimate: { title: '견적서 봐주세요', placeholder: '정비소에서 받은 견적 내용을 입력해주세요.\n예) 엔진오일 교체 15만원, 에어필터 5만원' },
+  consult: { title: '매니저 상담', placeholder: '궁금한 점이나 상담 내용을 자유롭게 적어주세요.' },
 };
 
 export default function RequestScreen() {
@@ -21,26 +22,28 @@ export default function RequestScreen() {
       Alert.alert('입력 오류', '모든 항목을 입력해주세요.');
       return;
     }
-    // 카카오톡 오픈채팅 또는 전화 연결 (추후 실제 링크로 교체)
     router.push('/complete');
   };
 
   const handleKakao = () => {
-    // 실제 카카오톡 오픈채팅 링크로 교체하세요
     Linking.openURL('https://open.kakao.com/o/your-link');
   };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.icon}>{service.icon}</Text>
-      <Text style={styles.title}>{service.title}</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.back}>‹</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{service.title}</Text>
+      </View>
 
       <View style={styles.form}>
         <Text style={styles.label}>이름</Text>
         <TextInput
           style={styles.input}
           placeholder="홍길동"
-          placeholderTextColor="#555"
+          placeholderTextColor={COLORS.inkMuted}
           value={name}
           onChangeText={setName}
         />
@@ -49,7 +52,7 @@ export default function RequestScreen() {
         <TextInput
           style={styles.input}
           placeholder="010-0000-0000"
-          placeholderTextColor="#555"
+          placeholderTextColor={COLORS.inkMuted}
           value={phone}
           onChangeText={setPhone}
           keyboardType="phone-pad"
@@ -59,7 +62,7 @@ export default function RequestScreen() {
         <TextInput
           style={[styles.input, styles.textarea]}
           placeholder={service.placeholder}
-          placeholderTextColor="#555"
+          placeholderTextColor={COLORS.inkMuted}
           value={message}
           onChangeText={setMessage}
           multiline
@@ -79,45 +82,47 @@ export default function RequestScreen() {
       </View>
 
       <TouchableOpacity style={styles.kakaoBtn} onPress={handleKakao}>
-        <Text style={styles.kakaoBtnText}>💬 카카오톡으로 바로 문의</Text>
+        <Text style={styles.kakaoBtnText}>카카오톡으로 바로 문의</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0C10' },
-  content: { padding: 20, paddingBottom: 40 },
-  icon: { fontSize: 48, marginBottom: 8, marginTop: 10 },
-  title: { fontSize: 22, fontWeight: '900', color: '#FFF', marginBottom: 24 },
+  container: { flex: 1, backgroundColor: COLORS.bg },
+  content: { padding: 22, paddingBottom: 40 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 22 },
+  back: { fontFamily: FONT.bodySemi, fontSize: 22, color: COLORS.ink },
+  headerTitle: { fontFamily: FONT.bodyBold, fontSize: 15, color: COLORS.ink },
   form: { gap: 8 },
-  label: { fontSize: 14, color: '#CCC', fontWeight: '600', marginBottom: 8, marginTop: 12 },
+  label: { fontFamily: FONT.bodySemi, fontSize: 13, color: COLORS.ink, marginBottom: 8, marginTop: 12 },
   input: {
-    backgroundColor: '#1A1A2E',
-    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.button,
     padding: 14,
-    color: '#FFF',
+    fontFamily: FONT.bodyMed,
     fontSize: 15,
+    color: COLORS.ink,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: COLORS.border,
   },
   textarea: { height: 120, paddingTop: 14 },
   submitBtn: {
-    backgroundColor: '#FF4757',
-    borderRadius: 14,
-    padding: 18,
+    backgroundColor: COLORS.dark,
+    borderRadius: RADIUS.button,
+    padding: 17,
     alignItems: 'center',
     marginTop: 28,
   },
-  submitBtnText: { color: '#FFF', fontSize: 17, fontWeight: '800' },
+  submitBtnText: { fontFamily: FONT.bodyBold, fontSize: 16, color: COLORS.onDark },
   divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 20, gap: 12 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: '#333' },
-  dividerText: { color: '#555', fontSize: 13 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
+  dividerText: { fontFamily: FONT.bodyMed, color: COLORS.inkMuted, fontSize: 13 },
   kakaoBtn: {
     backgroundColor: '#FEE500',
-    borderRadius: 14,
-    padding: 18,
+    borderRadius: RADIUS.button,
+    padding: 17,
     alignItems: 'center',
   },
-  kakaoBtnText: { color: '#1A1A1A', fontSize: 16, fontWeight: '700' },
+  kakaoBtnText: { fontFamily: FONT.bodyBold, color: '#1c1c1e', fontSize: 15 },
 });

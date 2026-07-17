@@ -1,19 +1,10 @@
 import { View, Text, StyleSheet } from 'react-native';
-
-const ACTION_ICONS = {
-  교체: '🔧',
-  판금: '🔨',
-  도색: '🎨',
-  수리: '🛠️',
-};
+import { COLORS, FONT, RADIUS } from '../constants/theme';
 
 export default function DamageCard({ damage }) {
-  const icon = ACTION_ICONS[damage.action] || '🛠️';
-
   return (
     <View style={styles.card}>
       <View style={styles.top}>
-        <Text style={styles.icon}>{icon}</Text>
         <View style={styles.titleArea}>
           <Text style={styles.name}>{damage.name}</Text>
           {damage.location ? <Text style={styles.location}>{damage.location}</Text> : null}
@@ -32,20 +23,19 @@ export default function DamageCard({ damage }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#1A1A2E',
-    borderRadius: 14,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.card,
     padding: 16,
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#2A2A3E',
   },
   top: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  icon: { fontSize: 24, marginRight: 10 },
   titleArea: { flex: 1 },
-  name: { fontSize: 15, fontWeight: '700', color: '#FFF' },
-  location: { fontSize: 12, color: '#888', marginTop: 2 },
-  actionBadge: { backgroundColor: '#FF475720', borderRadius: 8, paddingVertical: 4, paddingHorizontal: 10 },
-  actionBadgeText: { color: '#FF4757', fontSize: 12, fontWeight: '700' },
-  detail: { fontSize: 13, color: '#CCC', marginBottom: 8 },
-  price: { fontSize: 16, fontWeight: '800', color: '#FF4757', textAlign: 'right' },
+  name: { fontFamily: FONT.bodyBold, fontSize: 14, color: COLORS.ink },
+  location: { fontFamily: FONT.bodyMed, fontSize: 11.5, color: COLORS.inkMuted, marginTop: 2 },
+  actionBadge: { backgroundColor: COLORS.accentSoft, borderRadius: RADIUS.pill, paddingVertical: 4, paddingHorizontal: 10 },
+  actionBadgeText: { fontFamily: FONT.bodyBold, color: COLORS.accent, fontSize: 11 },
+  detail: { fontFamily: FONT.bodyMed, fontSize: 12.5, color: COLORS.inkMuted, marginBottom: 10, lineHeight: 18 },
+  price: { fontFamily: FONT.display, fontSize: 15, color: COLORS.ink, textAlign: 'right' },
 });
