@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet, Alert, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
@@ -6,6 +6,7 @@ import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../../constants/config';
 import { COLORS, FONT, RADIUS } from '../../constants/theme';
+import { showAlert } from '../../utils/alert';
 
 const MAX_PHOTOS = 5;
 
@@ -25,7 +26,7 @@ export default function DiagnoseScreen() {
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      Alert.alert('권한 필요', '사진을 사용하려면 권한을 허용해주세요.');
+      showAlert('권한 필요', '사진을 사용하려면 권한을 허용해주세요.');
       return;
     }
 
@@ -53,7 +54,7 @@ export default function DiagnoseScreen() {
     try {
       const locationPermission = await Location.requestForegroundPermissionsAsync();
       if (!locationPermission.granted) {
-        Alert.alert('권한 필요', '주변 정비소를 찾으려면 위치 권한을 허용해주세요.');
+        showAlert('권한 필요', '주변 정비소를 찾으려면 위치 권한을 허용해주세요.');
         setSubmitting(false);
         return;
       }
@@ -115,7 +116,7 @@ export default function DiagnoseScreen() {
       setAssets([]);
     } catch (err) {
       console.error('진단 요청 실패:', err);
-      Alert.alert('진단 실패', err.message || '잠시 후 다시 시도해주세요.');
+      showAlert('진단 실패', err.message || '잠시 후 다시 시도해주세요.');
     } finally {
       setSubmitting(false);
     }

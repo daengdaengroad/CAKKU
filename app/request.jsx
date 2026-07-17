@@ -1,7 +1,8 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Linking } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { COLORS, FONT, RADIUS } from '../constants/theme';
+import { showAlert } from '../utils/alert';
 
 const SERVICE_TYPES = {
   reservation: { title: '정비소 예약 맡기기', placeholder: '원하는 날짜, 정비 내용을 알려주세요.\n예) 3월 25일 오전, 엔진오일 교체' },
@@ -19,7 +20,7 @@ export default function RequestScreen() {
 
   const handleSubmit = () => {
     if (!name || !phone || !message) {
-      Alert.alert('입력 오류', '모든 항목을 입력해주세요.');
+      showAlert('입력 오류', '모든 항목을 입력해주세요.');
       return;
     }
     router.push('/complete');

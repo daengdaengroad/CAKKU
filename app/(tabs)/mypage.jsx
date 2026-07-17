@@ -1,9 +1,10 @@
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, Modal, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, TextInput } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CONSUMABLES } from '../../constants/carData';
 import { COLORS, FONT, RADIUS } from '../../constants/theme';
+import { showAlert } from '../../utils/alert';
 
 export default function MypageScreen() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function MypageScreen() {
   };
 
   const handleDelete = () => {
-    Alert.alert('차량 삭제', '등록된 차량을 삭제할까요?', [
+    showAlert('차량 삭제', '등록된 차량을 삭제할까요?', [
       { text: '취소', style: 'cancel' },
       {
         text: '삭제',
@@ -40,11 +41,11 @@ export default function MypageScreen() {
 
   const handleMileageUpdate = async () => {
     if (!newMileage || isNaN(newMileage)) {
-      Alert.alert('입력 오류', '올바른 주행거리를 입력해주세요.');
+      showAlert('입력 오류', '올바른 주행거리를 입력해주세요.');
       return;
     }
     if (parseInt(newMileage) < car.mileage) {
-      Alert.alert('입력 오류', '현재 주행거리보다 작을 수 없어요.');
+      showAlert('입력 오류', '현재 주행거리보다 작을 수 없어요.');
       return;
     }
     const updated = { ...car, mileage: parseInt(newMileage), lastUpdated: new Date().toISOString() };
@@ -52,7 +53,7 @@ export default function MypageScreen() {
     setCar(updated);
     setShowMileageModal(false);
     setNewMileage('');
-    Alert.alert('업데이트 완료', '소모품 현황이 새로 계산됐어요.');
+    showAlert('업데이트 완료', '소모품 현황이 새로 계산됐어요.');
   };
 
   return (

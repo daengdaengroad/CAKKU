@@ -1,9 +1,10 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CAR_BRANDS } from '../constants/carData';
 import { COLORS, FONT, RADIUS } from '../constants/theme';
+import { showAlert } from '../utils/alert';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -16,12 +17,12 @@ export default function RegisterScreen() {
 
   const handleSave = async () => {
     if (!brand || !model || !year || !mileage) {
-      Alert.alert('입력 오류', '모든 항목을 입력해주세요.');
+      showAlert('입력 오류', '모든 항목을 입력해주세요.');
       return;
     }
     const car = { brand, model, year, mileage: parseInt(mileage), carNumber };
     await AsyncStorage.setItem('myCar', JSON.stringify(car));
-    Alert.alert('등록 완료', '내 차가 등록됐어요!', [
+    showAlert('등록 완료', '내 차가 등록됐어요!', [
       { text: '확인', onPress: () => router.back() },
     ]);
   };
@@ -44,7 +45,7 @@ export default function RegisterScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, styles.tabDisabled]}
-          onPress={() => Alert.alert('준비 중', '차량번호 자동 조회 기능은 곧 업데이트 예정이에요.')}
+          onPress={() => showAlert('준비 중', '차량번호 자동 조회 기능은 곧 업데이트 예정이에요.')}
         >
           <Text style={styles.tabTextDisabled}>번호 조회 (준비 중)</Text>
         </TouchableOpacity>
