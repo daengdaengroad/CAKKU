@@ -32,8 +32,8 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.hero}>
-        <Text style={styles.heroLabel}>AI 차량 손상 진단</Text>
-        <Text style={styles.heroHeadline}>AI가 몇 초 만에{'\n'}손상을 진단합니다</Text>
+        <Text style={styles.heroLabel}>AI 시트 손상 진단</Text>
+        <Text style={styles.heroHeadline}>AI가 몇 초 만에{'\n'}시트 손상을 진단합니다</Text>
         <TouchableOpacity style={styles.ctaBtn} onPress={() => router.push('/diagnose')}>
           <Text style={styles.ctaBtnText}>사진 촬영하기</Text>
         </TouchableOpacity>

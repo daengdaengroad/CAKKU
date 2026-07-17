@@ -1,6 +1,6 @@
 const KAKAO_KEYWORD_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';
 const KAKAO_COORD2REGION_URL = 'https://dapi.kakao.com/v2/local/geo/coord2regioncode.json';
-const QUERIES = ['자동차정비', '카센터'];
+const QUERIES = ['카인테리어 시트', '가죽시트'];
 
 async function searchKeyword(query, lat, lng, radius) {
   const apiKey = process.env.KAKAO_REST_API_KEY;
@@ -62,7 +62,7 @@ async function reverseGeocode(lat, lng) {
   return region.region_2depth_name || region.region_1depth_name || null;
 }
 
-async function searchNearbyShops(lat, lng, radius = 5000) {
+async function searchNearbyShops(lat, lng, radius = 20000) {
   const results = await Promise.all(
     QUERIES.map((q) => searchKeyword(q, lat, lng, radius))
   );
