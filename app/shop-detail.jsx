@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, Linking } 
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { API_BASE_URL } from '../constants/config';
 import { COLORS, FONT, RADIUS } from '../constants/theme';
+import Roadview from '../components/Roadview';
 
 function shortCategory(category) {
   if (!category) return '';
@@ -83,6 +84,8 @@ export default function ShopDetailScreen() {
             </View>
           ) : null}
         </View>
+
+        <Roadview lat={shop.lat} lng={shop.lng} name={shop.name} />
 
         <View style={styles.actionRow}>
           {shop.phone ? (

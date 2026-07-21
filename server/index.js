@@ -7,6 +7,7 @@ const diagnoseRouter = require('./routes/diagnose');
 const shopsRouter = require('./routes/shops');
 const chatRouter = require('./routes/chat');
 const directoryRouter = require('./routes/directory');
+const roadviewRouter = require('./routes/roadview');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -24,6 +25,7 @@ app.use('/api', diagnoseRouter);
 app.use('/api', shopsRouter);
 app.use('/api', chatRouter);
 app.use('/api', directoryRouter);
+app.use('/api', roadviewRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
