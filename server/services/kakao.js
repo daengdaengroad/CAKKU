@@ -1,3 +1,5 @@
+const { isSeatShop } = require('./seatShop');
+
 const KAKAO_KEYWORD_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';
 const KAKAO_COORD2REGION_URL = 'https://dapi.kakao.com/v2/local/geo/coord2regioncode.json';
 const QUERIES = ['카인테리어 시트', '가죽시트 복원', '자동차 시트 수리', '자동차 실내복원'];
@@ -73,7 +75,9 @@ async function searchNearbyShops(lat, lng, radius = 20000) {
   for (const doc of results.flat()) {
     if (seen.has(doc.id)) continue;
     seen.add(doc.id);
-    shops.push(mapShop(doc));
+    const shop = mapShop(doc);
+    if (!isSeatShop(shop.name, shop.category)) continue;
+    shops.push(shop);
   }
 
   shops.sort((a, b) => (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity));

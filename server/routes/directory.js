@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const { findPlaceInfo } = require('../services/google');
+const { isSeatShop } = require('../services/seatShop');
 
 const router = express.Router();
 
@@ -10,7 +11,8 @@ function loadShops() {
   if (SHOPS) return SHOPS;
   try {
     const raw = fs.readFileSync(path.join(__dirname, '..', 'data', 'shops.json'), 'utf8');
-    SHOPS = JSON.parse(raw);
+    // 일반 정비소를 빼고 시트/실내 복원 관련 업체만 사용
+    SHOPS = JSON.parse(raw).filter((s) => isSeatShop(s.name, s.category));
   } catch (e) {
     SHOPS = [];
   }
