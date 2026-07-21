@@ -1,5 +1,5 @@
 const express = require('express');
-const { chatWithManager } = require('../services/anthropic');
+const { chatWithManager } = require('../services/gemini');
 
 const router = express.Router();
 
