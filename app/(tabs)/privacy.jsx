@@ -1,4 +1,4 @@
-import LegalScreen from '../components/LegalScreen';
+import LegalScreen from '../../components/LegalScreen';
 
 const SECTIONS = [
   {
