@@ -5,8 +5,10 @@ async function findPlaceInfo(name, address, lat, lng) {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) return null;
 
+  // 전체 도로명 주소는 구글 매칭을 오히려 방해할 때가 많아, 이름 + 시/구 정도만 사용
+  const locationHint = (address || '').split(' ').slice(0, 2).join(' ');
   const url = new URL(FIND_PLACE_URL);
-  url.searchParams.set('input', `${name} ${address}`);
+  url.searchParams.set('input', `${name} ${locationHint}`.trim());
   url.searchParams.set('inputtype', 'textquery');
   url.searchParams.set('fields', 'photos,rating,user_ratings_total');
   url.searchParams.set('locationbias', `point:${lat},${lng}`);

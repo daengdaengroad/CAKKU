@@ -4,7 +4,7 @@ const { findPlaceInfo, fetchPhoto } = require('../services/google');
 
 const router = express.Router();
 
-const PHOTO_LOOKUP_LIMIT = 8;
+const PHOTO_LOOKUP_LIMIT = 20;
 
 router.get('/shops', async (req, res) => {
   const { lat, lng, radius } = req.query;
@@ -34,6 +34,14 @@ router.get('/shops', async (req, res) => {
         };
       })
     );
+
+    // 사진 있는 곳을 먼저, 그 안에서는 가까운 순으로 정렬
+    withInfo.sort((a, b) => {
+      const ap = a.photoRef ? 0 : 1;
+      const bp = b.photoRef ? 0 : 1;
+      if (ap !== bp) return ap - bp;
+      return (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity);
+    });
 
     res.json({ shops: withInfo, regionName });
   } catch (err) {
