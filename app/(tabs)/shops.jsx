@@ -87,12 +87,12 @@ export default function ShopsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>주변 수리업체</Text>
-        <Text style={styles.subtitle}>{regionName ? `${regionName} 기준` : '내 현재 위치 기준'} · 가까운 순</Text>
+        <Text style={styles.subtitle}>{regionName ? `${regionName} 기준` : '내 현재 위치 기준'} · 사진 있는 곳 먼저</Text>
       </View>
 
       <View style={styles.filterRow}>
         <View style={styles.filterChipActive}>
-          <Text style={styles.filterChipActiveText}>거리순</Text>
+          <Text style={styles.filterChipActiveText}>추천순</Text>
         </View>
       </View>
 
