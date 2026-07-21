@@ -142,8 +142,8 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 22, paddingTop: 22 },
   title: { fontFamily: FONT.bodyBold, fontSize: 15, color: COLORS.ink },
   subtitle: { fontFamily: FONT.bodyMed, fontSize: 11, color: COLORS.inkMuted, marginTop: 2 },
-  chipRow: { flexGrow: 0, marginTop: 12 },
-  chipRowContent: { paddingHorizontal: 22, paddingVertical: 8, gap: 7, alignItems: 'center' },
+  chipRow: { flexGrow: 0, flexShrink: 0, height: 48, marginTop: 10 },
+  chipRowContent: { paddingHorizontal: 22, gap: 7, alignItems: 'center' },
   chip: {
     backgroundColor: COLORS.surface,
     borderWidth: 1,
