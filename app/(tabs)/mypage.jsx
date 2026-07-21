@@ -147,11 +147,11 @@ export default function MypageScreen() {
           <Text style={styles.menuText}>AI 매니저 상담</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/terms')}>
           <Text style={styles.menuText}>이용약관</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/privacy')}>
           <Text style={styles.menuText}>개인정보처리방침</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
