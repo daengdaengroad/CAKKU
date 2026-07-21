@@ -1,6 +1,6 @@
 const KAKAO_KEYWORD_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';
 const KAKAO_COORD2REGION_URL = 'https://dapi.kakao.com/v2/local/geo/coord2regioncode.json';
-const QUERIES = ['카인테리어 시트', '가죽시트'];
+const QUERIES = ['카인테리어 시트', '가죽시트 복원', '자동차 시트 수리', '자동차 실내복원'];
 
 async function searchKeyword(query, lat, lng, radius) {
   const apiKey = process.env.KAKAO_REST_API_KEY;
