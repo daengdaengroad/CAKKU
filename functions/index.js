@@ -1,11 +1,21 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { defineSecret } = require('firebase-functions/params');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const nodemailer = require('nodemailer');
 
 initializeApp();
 
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
+const GMAIL_APP_PASSWORD = defineSecret('GMAIL_APP_PASSWORD');
+const MANAGER_EMAIL = 'cakku2026@gmail.com';
+
+const REQUEST_TYPE_LABEL = {
+  reservation: '정비소 예약 맡기기',
+  estimate: '견적서 봐주세요',
+  consult: '매니저에게 문의',
+};
 
 const RESPONSE_SCHEMA = {
   type: 'OBJECT',
@@ -88,5 +98,31 @@ exports.diagnoseCarPhoto = onCall(
     });
 
     return result;
+  }
+);
+
+exports.onNewServiceRequest = onDocumentCreated(
+  { document: 'requests/{requestId}', secrets: [GMAIL_APP_PASSWORD] },
+  async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: MANAGER_EMAIL, pass: GMAIL_APP_PASSWORD.value() },
+    });
+
+    const typeLabel = REQUEST_TYPE_LABEL[data.type] || data.type || '문의';
+
+    try {
+      await transporter.sendMail({
+        from: `카쿠 <${MANAGER_EMAIL}>`,
+        to: MANAGER_EMAIL,
+        subject: `[카쿠] 새 요청 도착 - ${typeLabel}`,
+        text: `이름: ${data.name}\n연락처: ${data.phone}\n요청유형: ${typeLabel}\n내용: ${data.message}`,
+      });
+    } catch (e) {
+      console.error('Failed to send notification email', e);
+    }
   }
 );
