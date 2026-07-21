@@ -1,17 +1,30 @@
 const FIND_PLACE_URL = 'https://maps.googleapis.com/maps/api/place/findplacefromtext/json';
 const PHOTO_URL = 'https://maps.googleapis.com/maps/api/place/photo';
 
+// 구글이 찾은 위치가 실제 업체 좌표에서 이 거리보다 멀면 다른 가게로 보고 버린다.
+const MATCH_RADIUS_M = 250;
+
+function distanceMeters(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
 async function findPlaceInfo(name, address, lat, lng) {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) return null;
 
-  // 전체 도로명 주소는 구글 매칭을 오히려 방해할 때가 많아, 이름 + 시/구 정도만 사용
-  const locationHint = (address || '').split(' ').slice(0, 2).join(' ');
   const url = new URL(FIND_PLACE_URL);
-  url.searchParams.set('input', `${name} ${locationHint}`.trim());
+  url.searchParams.set('input', name);
   url.searchParams.set('inputtype', 'textquery');
-  url.searchParams.set('fields', 'photos,rating,user_ratings_total');
-  url.searchParams.set('locationbias', `point:${lat},${lng}`);
+  url.searchParams.set('fields', 'photos,rating,user_ratings_total,geometry');
+  // 반경 1km 원형 바이어스로 근처 결과만 우선
+  url.searchParams.set('locationbias', `circle:1000@${lat},${lng}`);
   url.searchParams.set('language', 'ko');
   url.searchParams.set('key', apiKey);
 
@@ -26,6 +39,13 @@ async function findPlaceInfo(name, address, lat, lng) {
 
     const c = data.candidates?.[0];
     if (!c) return null;
+
+    // 잘못된 매칭 방지: 구글 결과 위치가 실제 업체 좌표에서 멀면 사진·별점을 쓰지 않는다.
+    const g = c.geometry?.location;
+    if (g && Number.isFinite(Number(lat)) && Number.isFinite(Number(lng))) {
+      const d = distanceMeters(Number(lat), Number(lng), g.lat, g.lng);
+      if (d > MATCH_RADIUS_M) return null;
+    }
 
     return {
       photoRef: c.photos?.[0]?.photo_reference || null,
