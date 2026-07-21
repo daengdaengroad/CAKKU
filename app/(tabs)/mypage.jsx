@@ -143,8 +143,8 @@ export default function MypageScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>고객 지원</Text>
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/request?type=consult')}>
-          <Text style={styles.menuText}>매니저에게 문의</Text>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/chat')}>
+          <Text style={styles.menuText}>AI 매니저 상담</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem}>
