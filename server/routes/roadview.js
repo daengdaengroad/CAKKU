@@ -29,28 +29,39 @@ color:#8b8b8b;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:
 <style>
   html,body,#rv{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#111}
   .msg{height:100%;display:flex;align-items:center;justify-content:center;color:#8b8b8b;
-       font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;text-align:center;padding:20px;box-sizing:border-box}
+       font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13.5px;text-align:center;padding:20px;box-sizing:border-box;line-height:1.5}
 </style>
 </head><body>
 <div id="rv"></div>
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&autoload=false&libraries=services"></script>
+<script>
+  var lat=${lat}, lng=${lng};
+  function fail(msg){ var c=document.getElementById('rv'); if(c){ c.innerHTML='<div class="msg">'+msg+'</div>'; } }
+  // SDK가 15초 안에 안 뜨면(도메인 차단 등으로 스크립트가 막힌 경우) 안내
+  var sdkTimer=setTimeout(function(){ if(!window.kakao||!window.kakao.maps){ fail('지도 SDK를 불러오지 못했어요<br>카카오 개발자센터에서 이 사이트 도메인 등록을 확인해 주세요'); } }, 15000);
+  function onSdkError(){ clearTimeout(sdkTimer); fail('지도 SDK 요청이 거부됐어요<br>JS 키의 사이트 도메인(플랫폼 &gt; Web) 등록을 확인해 주세요'); }
+</script>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&autoload=false&libraries=services" onerror="onSdkError()"></script>
 <script>
   (function(){
-    var lat=${lat}, lng=${lng};
-    if(!window.kakao||!kakao.maps){document.getElementById('rv').innerHTML='<div class="msg">로드뷰를 불러오지 못했어요</div>';return;}
-    kakao.maps.load(function(){
-      var container=document.getElementById('rv');
-      var pos=new kakao.maps.LatLng(lat,lng);
-      var roadview=new kakao.maps.Roadview(container);
-      var client=new kakao.maps.RoadviewClient();
-      client.getNearestPanoId(pos, 120, function(panoId){
-        if(panoId===null){
-          container.innerHTML='<div class="msg">이 위치는 로드뷰가 없어요</div>';
-        }else{
-          roadview.setPanoId(panoId, pos);
-        }
+    clearTimeout(sdkTimer);
+    if(!window.kakao||!window.kakao.maps){
+      fail('지도 SDK가 초기화되지 않았어요<br>JS 키의 사이트 도메인(플랫폼 &gt; Web) 등록을 확인해 주세요');
+      return;
+    }
+    try{
+      kakao.maps.load(function(){
+        try{
+          var container=document.getElementById('rv');
+          var pos=new kakao.maps.LatLng(lat,lng);
+          var roadview=new kakao.maps.Roadview(container);
+          var client=new kakao.maps.RoadviewClient();
+          client.getNearestPanoId(pos, 150, function(panoId){
+            if(panoId===null){ fail('이 위치는 로드뷰가 없어요'); }
+            else { roadview.setPanoId(panoId, pos); }
+          });
+        }catch(e){ fail('로드뷰 표시 오류: '+(e&&e.message||e)); }
       });
-    });
+    }catch(e){ fail('SDK 로드 오류: '+(e&&e.message||e)); }
   })();
 </script>
 </body></html>`);
