@@ -54,6 +54,8 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen name="terms" options={{ href: null }} />
+      <Tabs.Screen name="privacy" options={{ href: null }} />
     </Tabs>
   );
 }
