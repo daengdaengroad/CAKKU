@@ -7,7 +7,7 @@
  * 참고: daengdaengroad/build_places_db.js 방식을 시트수리용으로 응용
  */
 
-require('dotenv').config();
+try { require('dotenv').config(); } catch { /* CI 등 dotenv 미설치 환경에서는 환경변수를 직접 사용 */ }
 const fs = require('fs');
 const path = require('path');
 
