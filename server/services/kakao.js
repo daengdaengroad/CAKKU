@@ -36,6 +36,7 @@ function mapShop(doc) {
     lat: Number(doc.y),
     lng: Number(doc.x),
     placeUrl: doc.place_url,
+    category: doc.category_name || '',
   };
 }
 

@@ -1,6 +1,6 @@
 const express = require('express');
 const { searchNearbyShops, reverseGeocode } = require('../services/kakao');
-const { findPhotoRef, fetchPhoto } = require('../services/google');
+const { findPlaceInfo, fetchPhoto } = require('../services/google');
 
 const router = express.Router();
 
@@ -21,15 +21,21 @@ router.get('/shops', async (req, res) => {
       reverseGeocode(latNum, lngNum).catch(() => null),
     ]);
 
-    const withPhotos = await Promise.all(
+    const withInfo = await Promise.all(
       shops.map(async (shop, i) => {
         if (i >= PHOTO_LOOKUP_LIMIT) return shop;
-        const photoRef = await findPhotoRef(shop.name, shop.address, shop.lat, shop.lng);
-        return photoRef ? { ...shop, photoRef } : shop;
+        const info = await findPlaceInfo(shop.name, shop.address, shop.lat, shop.lng);
+        if (!info) return shop;
+        return {
+          ...shop,
+          ...(info.photoRef ? { photoRef: info.photoRef } : {}),
+          rating: info.rating,
+          reviews: info.reviews,
+        };
       })
     );
 
-    res.json({ shops: withPhotos, regionName });
+    res.json({ shops: withInfo, regionName });
   } catch (err) {
     res.status(500).json({ error: err.message || '업체 검색에 실패했습니다' });
   }
