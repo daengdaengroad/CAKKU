@@ -21,44 +21,49 @@ export default function ShopListItem({ shop }) {
   };
 
   const category = shortCategory(shop.category);
+  const distance = formatDistance(shop.distanceMeters);
+  const hasRating = shop.rating != null;
 
   return (
     <TouchableOpacity style={styles.item} onPress={openDetail} activeOpacity={0.85}>
-      {shop.photoRef ? (
-        <Image
-          source={{ uri: `${API_BASE_URL}/api/shop-photo?ref=${encodeURIComponent(shop.photoRef)}&w=600` }}
-          style={styles.photo}
-        />
-      ) : (
-        <View style={[styles.photo, styles.photoPlaceholder]}>
-          <Text style={styles.photoPlaceholderText}>사진 준비 중</Text>
-        </View>
-      )}
-
       <View style={styles.body}>
-        <View style={styles.nameRow}>
-          <Text style={styles.name} numberOfLines={1}>{shop.name}</Text>
-          <Text style={styles.distance}>{formatDistance(shop.distanceMeters)}</Text>
-        </View>
+        <Text style={styles.name} numberOfLines={1}>{shop.name}</Text>
 
-        {shop.rating != null ? (
-          <View style={styles.ratingRow}>
-            <Text style={styles.star}>★</Text>
-            <Text style={styles.rating}>{Number(shop.rating).toFixed(1)}</Text>
-            {shop.reviews != null ? <Text style={styles.reviews}>({Number(shop.reviews).toLocaleString()})</Text> : null}
+        {(hasRating || distance) ? (
+          <View style={styles.metaRow}>
+            {hasRating ? (
+              <>
+                <Text style={styles.star}>★</Text>
+                <Text style={styles.rating}>{Number(shop.rating).toFixed(1)}</Text>
+                {shop.reviews != null ? (
+                  <Text style={styles.reviews}>({Number(shop.reviews).toLocaleString()})</Text>
+                ) : null}
+              </>
+            ) : null}
+            {hasRating && distance ? <Text style={styles.dot}>·</Text> : null}
+            {distance ? <Text style={styles.distance}>{distance}</Text> : null}
           </View>
         ) : null}
 
         <Text style={styles.address} numberOfLines={1}>{shop.address}</Text>
 
         {category ? (
-          <View style={styles.tagRow}>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>{category}</Text>
-            </View>
+          <View style={styles.tag}>
+            <Text style={styles.tagText}>{category}</Text>
           </View>
         ) : null}
       </View>
+
+      {shop.photoRef ? (
+        <Image
+          source={{ uri: `${API_BASE_URL}/api/shop-photo?ref=${encodeURIComponent(shop.photoRef)}&w=200` }}
+          style={styles.thumb}
+        />
+      ) : (
+        <View style={[styles.thumb, styles.thumbPlaceholder]}>
+          <Text style={styles.thumbPlaceholderText}>준비 중</Text>
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
@@ -69,22 +74,30 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: RADIUS.card,
-    overflow: 'hidden',
-    marginBottom: 12,
+    padding: 13,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  photo: { width: '100%', height: 140, backgroundColor: COLORS.viewfinderBg },
-  photoPlaceholder: { alignItems: 'center', justifyContent: 'center' },
-  photoPlaceholderText: { fontFamily: FONT.bodyMed, fontSize: 12, color: COLORS.inkMuted },
-  body: { padding: 15 },
-  nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  name: { flex: 1, fontFamily: FONT.bodyBold, fontSize: 15, color: COLORS.ink, marginRight: 8 },
-  distance: { fontFamily: FONT.bodyBold, fontSize: 12.5, color: COLORS.accent },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 5 },
-  star: { fontSize: 12, color: COLORS.severityMid },
-  rating: { fontFamily: FONT.bodyBold, fontSize: 12.5, color: COLORS.ink },
+  body: { flex: 1, marginRight: 12 },
+  name: { fontFamily: FONT.bodyBold, fontSize: 14.5, color: COLORS.ink },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 5 },
+  star: { fontSize: 11.5, color: COLORS.severityMid },
+  rating: { fontFamily: FONT.bodyBold, fontSize: 12, color: COLORS.ink },
   reviews: { fontFamily: FONT.bodyMed, fontSize: 11.5, color: COLORS.inkMuted },
+  dot: { fontFamily: FONT.bodyMed, fontSize: 11.5, color: COLORS.inkMuted, marginHorizontal: 1 },
+  distance: { fontFamily: FONT.bodyBold, fontSize: 12, color: COLORS.accent },
   address: { fontFamily: FONT.bodyMed, fontSize: 12, color: COLORS.inkMuted, marginTop: 5 },
-  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
-  tag: { backgroundColor: COLORS.accentSoft, borderRadius: RADIUS.pill, paddingVertical: 5, paddingHorizontal: 10 },
+  tag: {
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.accentSoft,
+    borderRadius: RADIUS.pill,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
+    marginTop: 8,
+  },
   tagText: { fontFamily: FONT.bodySemi, fontSize: 10.5, color: COLORS.accent },
+  thumb: { width: 78, height: 78, borderRadius: RADIUS.thumb, backgroundColor: COLORS.viewfinderBg },
+  thumbPlaceholder: { alignItems: 'center', justifyContent: 'center' },
+  thumbPlaceholderText: { fontFamily: FONT.bodyMed, fontSize: 11, color: COLORS.inkMuted },
 });
