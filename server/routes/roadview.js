@@ -8,6 +8,8 @@ router.get('/roadview', (req, res) => {
   const lat = Number(req.query.lat);
   const lng = Number(req.query.lng);
   const key = process.env.KAKAO_JS_KEY;
+  // 실제 서버가 쓰는 키를 안전하게(중간 가림) 화면에 노출해 진단
+  const maskedKey = key ? `${key.slice(0, 6)}…${key.slice(-4)} (len ${key.length})` : '(none)';
 
   res.set('Content-Type', 'text/html; charset=utf-8');
 
@@ -44,9 +46,11 @@ color:#8b8b8b;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:
   var _warn=console.warn; console.warn=function(){ pushLog('warn', arguments); _warn.apply(console, arguments); };
   window.addEventListener('error', function(ev){ pushLog('js', [ev.message||ev.type]); });
 
+  var maskedKey='${maskedKey}';
   function fail(msg){
     if(done) return; done=true;
-    var extra = logs.length ? '<div class="dbg">'+logs.slice(0,4).join('\\n')+'</div>' : '';
+    var info = 'appkey='+maskedKey+'\\norigin='+location.origin;
+    var extra = '<div class="dbg">'+(logs.length?logs.slice(0,4).join('\\n')+'\\n':'')+info+'</div>';
     var c=document.getElementById('rv'); if(c){ c.innerHTML='<div class="msg">'+msg+extra+'</div>'; }
   }
   function ok(){ done=true; }
