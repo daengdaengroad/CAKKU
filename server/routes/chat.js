@@ -18,4 +18,30 @@ router.post('/chat', async (req, res) => {
   }
 });
 
+// 채팅(제미나이) 연결 상태 진단용. 키 노출 없이 실패 원인만 보여준다.
+router.get('/chat/health', async (req, res) => {
+  const key = process.env.GEMINI_API_KEY;
+  const model = process.env.GEMINI_CHAT_MODEL || 'gemini-2.0-flash';
+  if (!key) {
+    return res.json({ ok: false, hasKey: false, model, reason: 'GEMINI_API_KEY 환경변수가 없어요' });
+  }
+  try {
+    const r = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: '핑' }] }],
+          generationConfig: { maxOutputTokens: 16 },
+        }),
+      }
+    );
+    const body = await r.text();
+    res.json({ ok: r.ok, hasKey: true, keyLen: key.length, model, status: r.status, body: body.slice(0, 400) });
+  } catch (e) {
+    res.json({ ok: false, hasKey: true, keyLen: key.length, model, error: e.message });
+  }
+});
+
 module.exports = router;
