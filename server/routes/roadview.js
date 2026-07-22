@@ -37,6 +37,7 @@ color:#8b8b8b;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:
 <script>
   var lat=${lat}, lng=${lng};
   var done=false;
+  var sdkState='pending'; // pending | loaded | error
   var logs=[];
   function pushLog(kind, args){ try{ logs.push(kind+': '+Array.prototype.map.call(args,function(a){return (a&&a.message)||String(a);}).join(' ')); }catch(e){} }
   var _err=console.error; console.error=function(){ pushLog('kakao', arguments); _err.apply(console, arguments); };
@@ -72,14 +73,26 @@ color:#8b8b8b;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:
       }catch(e){ fail('SDK load 오류: '+(e&&e.message||e)); }
     }else{
       waited += 200;
-      if(waited>=10000){ clearInterval(poll); fail('지도 SDK를 불러오지 못했어요<br>사이트 도메인(플랫폼 &gt; Web) 등록을 확인해 주세요'); }
+      if(waited>=10000){
+        clearInterval(poll);
+        var why = sdkState==='error'
+          ? '카카오가 SDK 요청을 거부했어요 (HTTP 오류)<br>[앱 설정 &gt; 플랫폼 &gt; Web &gt; 사이트 도메인]에 등록됐는지 확인'
+          : sdkState==='loaded'
+            ? 'SDK는 받았는데 초기화가 안 됐어요<br>카카오맵 사용 설정/도메인을 확인'
+            : 'SDK 응답이 없어요 (네트워크/도메인 차단)';
+        fail(why + '<div class="dbg">sdkState=' + sdkState + '</div>');
+      }
     }
   }, 200);
 
   // load 콜백이 끝내 안 오는 경우(도메인 거부 등) 대비한 최종 가드
-  setTimeout(function(){ if(!done){ fail('지도 SDK 초기화가 끝나지 않았어요<br>도메인 등록/키를 확인해 주세요'); } }, 14000);
+  setTimeout(function(){ if(!done){ fail('지도 SDK 초기화가 끝나지 않았어요<br>도메인 등록/키를 확인해 주세요<div class="dbg">sdkState='+sdkState+'</div>'); } }, 14000);
 </script>
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&autoload=false&libraries=services"></script>
+<script
+  src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&autoload=false"
+  onload="sdkState='loaded'"
+  onerror="sdkState='error'; pushLog('sdk',['스크립트 요청 실패 — 도메인/키 거부'])"
+></script>
 </body></html>`);
 });
 
