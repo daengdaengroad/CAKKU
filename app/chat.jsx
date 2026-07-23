@@ -16,7 +16,7 @@ import { API_BASE_URL } from '../constants/config';
 import { COLORS, FONT, RADIUS } from '../constants/theme';
 
 const GREETING =
-  '안녕하세요! 카쿠 AI 상담 매니저예요. 차량 시트나 실내 손상, 복원 방법, 대략적인 수리 비용 등 궁금한 점을 편하게 물어보세요.';
+  '안녕하세요! 카꾸 AI 상담 매니저예요. 차량 시트나 실내 손상, 복원 방법, 대략적인 수리 비용 등 궁금한 점을 편하게 물어보세요.';
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -69,7 +69,7 @@ export default function ChatScreen() {
         </TouchableOpacity>
         <View>
           <Text style={styles.headerTitle}>AI 상담 매니저</Text>
-          <Text style={styles.headerSub}>카쿠 · 보통 몇 초 안에 답해요</Text>
+          <Text style={styles.headerSub}>카꾸 · 보통 몇 초 안에 답해요</Text>
         </View>
       </View>
 

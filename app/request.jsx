@@ -96,7 +96,7 @@ export default function RequestScreen() {
       </TouchableOpacity>
 
       <Text style={styles.notice}>
-        접수하시면 카쿠 담당자가 확인 후 연락드려요.
+        접수하시면 카꾸 담당자가 확인 후 연락드려요.
       </Text>
     </ScrollView>
   );

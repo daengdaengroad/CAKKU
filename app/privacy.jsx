@@ -3,7 +3,7 @@ import LegalScreen from '../components/LegalScreen';
 const SECTIONS = [
   {
     body:
-      '카쿠(CarCare)(이하 "서비스")는 이용자의 개인정보를 소중히 여기며, 아래와 같이 개인정보를 처리합니다.',
+      '카꾸(이하 "서비스")는 이용자의 개인정보를 소중히 여기며, 아래와 같이 개인정보를 처리합니다.',
   },
   {
     heading: '1. 수집하는 정보',

@@ -46,10 +46,10 @@ async function sendReservationEmail(r) {
   ].filter(Boolean);
 
   await t.sendMail({
-    from: `카쿠 예약 접수 <${process.env.GMAIL_USER}>`,
+    from: `카꾸 예약 접수 <${process.env.GMAIL_USER}>`,
     to,
     replyTo: r.phone ? undefined : undefined,
-    subject: `[카쿠 예약] ${r.name} · ${r.shop_name || '업체 미지정'}`,
+    subject: `[카꾸 예약] ${r.name} · ${r.shop_name || '업체 미지정'}`,
     text: lines.join('\n'),
   });
   return true;

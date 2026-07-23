@@ -168,7 +168,7 @@ export default function MypageScreen() {
         <Text style={styles.adminLinkText}>🔒 사장님 예약 관리</Text>
       </TouchableOpacity>
 
-      <Text style={styles.version}>CarCare Agency v1.0.0</Text>
+      <Text style={styles.version}>카꾸 v1.0.0</Text>
 
       <Modal visible={showMileageModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
