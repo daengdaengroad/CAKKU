@@ -135,7 +135,10 @@ export default function MypageScreen() {
         <View style={styles.planBox}>
           <Text style={styles.planBadge}>FREE</Text>
           <Text style={styles.planDesc}>현재 무료 플랜 이용 중</Text>
-          <TouchableOpacity style={styles.upgradeBtn}>
+          <TouchableOpacity
+            style={styles.upgradeBtn}
+            onPress={() => showAlert('준비 중이에요', '유료 플랜은 곧 제공될 예정이에요. 지금은 모든 기능을 무료로 쓰실 수 있어요.')}
+          >
             <Text style={styles.upgradeBtnText}>유료 플랜 업그레이드</Text>
           </TouchableOpacity>
         </View>
