@@ -37,6 +37,6 @@ app.get('/health', (req, res) => {
 app.use(express.static(WEB_BUILD_DIR, { extensions: ['html'] }));
 
 app.listen(PORT, () => {
-  console.log(`CarCare Agency 서버 실행 중: http://localhost:${PORT}`);
+  console.log(`카꾸 서버 실행 중: http://localhost:${PORT}`);
   initReservations().catch((e) => console.error('예약 테이블 초기화 실패:', e.message));
 });

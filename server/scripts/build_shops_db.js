@@ -1,5 +1,5 @@
 /**
- * 카쿠(CAKKU) 전국 시트/실내 복원 전문 업체 DB 구축 스크립트
+ * 카꾸(CAKKU) 전국 시트/실내 복원 전문 업체 DB 구축 스크립트
  * 실행: KAKAO_REST_API_KEY=... node server/scripts/build_shops_db.js
  * 결과: server/data/shops.json 생성
  *

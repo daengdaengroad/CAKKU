@@ -34,7 +34,7 @@ export default function HomeScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.logoRow}>
         <View style={styles.logoDot} />
-        <Text style={styles.logoText}>CarCare</Text>
+        <Text style={styles.logoText}>카꾸</Text>
       </View>
       <Text style={styles.tagline}>내 차 시트 관리, AI로 더 쉽게</Text>
 
