@@ -21,7 +21,8 @@ router.post('/chat', async (req, res) => {
 // 채팅(제미나이) 연결 상태 진단용. 키 노출 없이 실패 원인만 보여준다.
 router.get('/chat/health', async (req, res) => {
   const key = process.env.GEMINI_API_KEY;
-  const model = process.env.GEMINI_CHAT_MODEL || 'gemini-2.0-flash';
+  // ?model= 로 임시 지정해 모델별 무료 한도 테스트 가능 (없으면 실제 사용 모델)
+  const model = (req.query.model || process.env.GEMINI_CHAT_MODEL || 'gemini-2.0-flash').toString();
   if (!key) {
     return res.json({ ok: false, hasKey: false, model, reason: 'GEMINI_API_KEY 환경변수가 없어요' });
   }
