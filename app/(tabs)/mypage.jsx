@@ -157,6 +157,14 @@ export default function MypageScreen() {
         </TouchableOpacity>
       </View>
 
+      <TouchableOpacity
+        style={styles.adminLink}
+        onPress={() => router.push('/admin')}
+        activeOpacity={0.6}
+      >
+        <Text style={styles.adminLinkText}>🔒 사장님 예약 관리</Text>
+      </TouchableOpacity>
+
       <Text style={styles.version}>CarCare Agency v1.0.0</Text>
 
       <Modal visible={showMileageModal} transparent animationType="slide">
@@ -325,7 +333,9 @@ const styles = StyleSheet.create({
   },
   menuText: { fontFamily: FONT.bodyMed, fontSize: 14, color: COLORS.ink },
   menuArrow: { color: COLORS.inkMuted, fontSize: 18 },
-  version: { textAlign: 'center', color: COLORS.inkMuted, fontFamily: FONT.body, fontSize: 11, marginTop: 8 },
+  adminLink: { alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 12, marginTop: 4 },
+  adminLinkText: { textAlign: 'center', color: COLORS.inkMuted, fontFamily: FONT.bodyMed, fontSize: 12 },
+  version: { textAlign: 'center', color: COLORS.inkMuted, fontFamily: FONT.body, fontSize: 11, marginTop: 4 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(20,20,20,0.4)', justifyContent: 'flex-end' },
   modalBox: {
     backgroundColor: COLORS.bg,
