@@ -1,6 +1,9 @@
 const Anthropic = require('@anthropic-ai/sdk');
+const { CHAT_SYSTEM_PROMPT, sanitizeMessages } = require('./chatPrompt');
 
 const MODEL = process.env.CLAUDE_MODEL || 'claude-opus-4-8';
+// 채팅 폴백용 저가 모델 (제미나이 실패 시 사용)
+const CHAT_MODEL = process.env.CLAUDE_CHAT_MODEL || 'claude-haiku-4-5-20251001';
 
 const PRICE_REFERENCE = `
 참고 시세표 (2026년 국내 기준, 반드시 이 범위 안에서 심각도에 맞게 추정하세요):
@@ -78,4 +81,29 @@ async function diagnoseDamage({ images, car }) {
   }
 }
 
-module.exports = { diagnoseDamage };
+// 제미나이가 실패할 때 쓰는 클로드(Haiku) 상담 채팅 폴백.
+async function chatWithClaude(messages) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY가 설정되지 않았습니다');
+
+  const sanitized = sanitizeMessages(messages);
+  if (!sanitized.length) throw new Error('메시지가 없습니다');
+
+  const client = new Anthropic({ apiKey });
+  const message = await client.messages.create({
+    model: CHAT_MODEL,
+    max_tokens: 1024,
+    system: CHAT_SYSTEM_PROMPT,
+    messages: sanitized.map((m) => ({ role: m.role, content: m.content })),
+  });
+
+  const reply = message.content
+    .map((b) => b.text || '')
+    .join('')
+    .trim();
+
+  if (!reply) throw new Error('AI 응답이 비어 있습니다');
+  return reply;
+}
+
+module.exports = { diagnoseDamage, chatWithClaude };
