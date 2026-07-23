@@ -33,6 +33,7 @@ export default function ShopDetailScreen() {
       pathname: '/request',
       params: {
         type: 'reservation',
+        shopName: shop.name || '',
         prefill: `[희망 업체] ${shop.name}\n[주소] ${shop.address || ''}\n\n원하시는 날짜와 정비 내용을 적어주세요.`,
       },
     });
