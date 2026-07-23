@@ -8,6 +8,8 @@ const shopsRouter = require('./routes/shops');
 const chatRouter = require('./routes/chat');
 const directoryRouter = require('./routes/directory');
 const roadviewRouter = require('./routes/roadview');
+const reservationRouter = require('./routes/reservation');
+const { initReservations } = require('./services/db');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -26,6 +28,7 @@ app.use('/api', shopsRouter);
 app.use('/api', chatRouter);
 app.use('/api', directoryRouter);
 app.use('/api', roadviewRouter);
+app.use('/api', reservationRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
@@ -33,4 +36,7 @@ app.get('/health', (req, res) => {
 
 app.use(express.static(WEB_BUILD_DIR, { extensions: ['html'] }));
 
-app.listen(PORT, () => console.log(`CarCare Agency 서버 실행 중: http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`CarCare Agency 서버 실행 중: http://localhost:${PORT}`);
+  initReservations().catch((e) => console.error('예약 테이블 초기화 실패:', e.message));
+});

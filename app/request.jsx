@@ -1,7 +1,8 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Linking } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { COLORS, FONT, RADIUS } from '../constants/theme';
+import { API_BASE_URL } from '../constants/config';
 import { showAlert } from '../utils/alert';
 
 const SERVICE_TYPES = {
@@ -12,22 +13,32 @@ const SERVICE_TYPES = {
 
 export default function RequestScreen() {
   const router = useRouter();
-  const { type, prefill } = useLocalSearchParams();
+  const { type, prefill, shopName } = useLocalSearchParams();
   const service = SERVICE_TYPES[type] || SERVICE_TYPES.consult;
   const [message, setMessage] = useState(prefill || '');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!name || !phone || !message) {
       showAlert('입력 오류', '모든 항목을 입력해주세요.');
       return;
     }
-    router.push('/complete');
-  };
-
-  const handleKakao = () => {
-    Linking.openURL('https://open.kakao.com/o/your-link');
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/reservation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, message, type: type || 'consult', shopName: shopName || '' }),
+      });
+      if (!res.ok) throw new Error('접수 실패');
+      router.push('/complete');
+    } catch (e) {
+      showAlert('전송 실패', '예약 접수에 실패했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -72,19 +83,21 @@ export default function RequestScreen() {
         />
       </View>
 
-      <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
-        <Text style={styles.submitBtnText}>요청 보내기</Text>
+      <TouchableOpacity
+        style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
+        onPress={handleSubmit}
+        disabled={submitting}
+      >
+        {submitting ? (
+          <ActivityIndicator color={COLORS.onDark} />
+        ) : (
+          <Text style={styles.submitBtnText}>요청 보내기</Text>
+        )}
       </TouchableOpacity>
 
-      <View style={styles.divider}>
-        <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>또는</Text>
-        <View style={styles.dividerLine} />
-      </View>
-
-      <TouchableOpacity style={styles.kakaoBtn} onPress={handleKakao}>
-        <Text style={styles.kakaoBtnText}>카카오톡으로 바로 문의</Text>
-      </TouchableOpacity>
+      <Text style={styles.notice}>
+        접수하시면 카쿠 담당자가 확인 후 연락드려요.
+      </Text>
     </ScrollView>
   );
 }
@@ -115,15 +128,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 28,
   },
+  submitBtnDisabled: { opacity: 0.6 },
   submitBtnText: { fontFamily: FONT.bodyBold, fontSize: 16, color: COLORS.onDark },
-  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 20, gap: 12 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
-  dividerText: { fontFamily: FONT.bodyMed, color: COLORS.inkMuted, fontSize: 13 },
-  kakaoBtn: {
-    backgroundColor: '#FEE500',
-    borderRadius: RADIUS.button,
-    padding: 17,
-    alignItems: 'center',
+  notice: {
+    fontFamily: FONT.bodyMed,
+    fontSize: 12,
+    color: COLORS.inkMuted,
+    textAlign: 'center',
+    marginTop: 16,
+    lineHeight: 18,
   },
-  kakaoBtnText: { fontFamily: FONT.bodyBold, color: '#1c1c1e', fontSize: 15 },
 });
