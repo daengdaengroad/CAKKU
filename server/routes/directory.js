@@ -62,6 +62,8 @@ router.get('/directory', async (req, res) => {
       return {
         ...s,
         ...(info.photoRef ? { photoRef: info.photoRef } : {}),
+        // 카카오에 전화번호가 없으면 구글에서 보강
+        ...(!s.phone && info.phone ? { phone: info.phone } : {}),
         rating: info.rating,
         reviews: info.reviews,
       };
