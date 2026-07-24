@@ -1,4 +1,4 @@
-const { CHAT_SYSTEM_PROMPT, sanitizeMessages } = require('./chatPrompt');
+const { getChatSystemPrompt, sanitizeMessages } = require('./chatPrompt');
 
 const MODEL = process.env.GEMINI_CHAT_MODEL || 'gemini-2.0-flash';
 
@@ -21,7 +21,7 @@ async function chatWithManager(messages) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: CHAT_SYSTEM_PROMPT }] },
+        systemInstruction: { parts: [{ text: getChatSystemPrompt() }] },
         contents,
         generationConfig: { maxOutputTokens: 1024, temperature: 0.7 },
       }),

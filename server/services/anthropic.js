@@ -1,5 +1,5 @@
 const Anthropic = require('@anthropic-ai/sdk');
-const { CHAT_SYSTEM_PROMPT, sanitizeMessages } = require('./chatPrompt');
+const { getChatSystemPrompt, sanitizeMessages } = require('./chatPrompt');
 
 const MODEL = process.env.CLAUDE_MODEL || 'claude-opus-4-8';
 // 채팅 폴백용 저가 모델 (제미나이 실패 시 사용)
@@ -93,7 +93,7 @@ async function chatWithClaude(messages) {
   const message = await client.messages.create({
     model: CHAT_MODEL,
     max_tokens: 1024,
-    system: CHAT_SYSTEM_PROMPT,
+    system: getChatSystemPrompt(),
     messages: sanitized.map((m) => ({ role: m.role, content: m.content })),
   });
 
