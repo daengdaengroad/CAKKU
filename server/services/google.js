@@ -22,7 +22,7 @@ async function findPlaceInfo(name, address, lat, lng) {
   const url = new URL(FIND_PLACE_URL);
   url.searchParams.set('input', name);
   url.searchParams.set('inputtype', 'textquery');
-  url.searchParams.set('fields', 'photos,rating,user_ratings_total,geometry');
+  url.searchParams.set('fields', 'photos,rating,user_ratings_total,geometry,formatted_phone_number');
   // 반경 1km 원형 바이어스로 근처 결과만 우선
   url.searchParams.set('locationbias', `circle:1000@${lat},${lng}`);
   url.searchParams.set('language', 'ko');
@@ -51,6 +51,7 @@ async function findPlaceInfo(name, address, lat, lng) {
       photoRef: c.photos?.[0]?.photo_reference || null,
       rating: typeof c.rating === 'number' ? c.rating : null,
       reviews: typeof c.user_ratings_total === 'number' ? c.user_ratings_total : null,
+      phone: c.formatted_phone_number || null,
     };
   } catch (err) {
     console.error(`구글 Places 조회 예외 [${name}]:`, err.message);

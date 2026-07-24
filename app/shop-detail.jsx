@@ -96,10 +96,18 @@ export default function ShopDetailScreen() {
           ) : null}
           {shop.placeUrl ? (
             <TouchableOpacity style={styles.secondaryBtn} onPress={handleMap}>
-              <Text style={styles.secondaryBtnText}>지도에서 보기</Text>
+              <Text style={styles.secondaryBtnText}>
+                {shop.phone ? '지도에서 보기' : '지도·연락처 보기'}
+              </Text>
             </TouchableOpacity>
           ) : null}
         </View>
+
+        {!shop.phone && shop.placeUrl ? (
+          <Text style={styles.contactNote}>
+            전화번호가 등록되지 않은 곳이에요. 위 “지도·연락처 보기”에서 전화·길찾기를 확인할 수 있어요.
+          </Text>
+        ) : null}
 
         <Text style={styles.notice}>
           인증·시공 정보는 제휴 업체 등록 시 표시됩니다.
@@ -165,6 +173,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   secondaryBtnText: { fontFamily: FONT.bodyBold, fontSize: 13.5, color: COLORS.ink },
+  contactNote: {
+    fontFamily: FONT.bodyMed,
+    fontSize: 11.5,
+    color: COLORS.inkMuted,
+    lineHeight: 17,
+    paddingHorizontal: 22,
+    marginTop: 12,
+  },
   notice: {
     fontFamily: FONT.bodyMed,
     fontSize: 11.5,
