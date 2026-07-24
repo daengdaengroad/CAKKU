@@ -1,6 +1,7 @@
 const express = require('express');
 const { chatWithManager } = require('../services/gemini');
 const { chatWithClaude } = require('../services/anthropic');
+const { matchShopsInText } = require('../services/chatPrompt');
 
 const router = express.Router();
 
@@ -13,12 +14,12 @@ router.post('/chat', async (req, res) => {
   // 제미나이 우선 → 실패하면(무료 한도 0/오류 등) 클로드 Haiku로 자동 폴백
   try {
     const reply = await chatWithManager(messages);
-    return res.json({ reply, engine: 'gemini' });
+    return res.json({ reply, engine: 'gemini', shops: matchShopsInText(reply) });
   } catch (geminiErr) {
     console.error('제미나이 채팅 실패, 클로드로 폴백:', geminiErr.message);
     try {
       const reply = await chatWithClaude(messages);
-      return res.json({ reply, engine: 'claude' });
+      return res.json({ reply, engine: 'claude', shops: matchShopsInText(reply) });
     } catch (claudeErr) {
       console.error('클로드 폴백도 실패:', claudeErr.message);
       return res.status(500).json({ error: '상담 응답에 실패했어요. 잠시 후 다시 시도해주세요.' });
