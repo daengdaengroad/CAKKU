@@ -49,7 +49,7 @@ export default function ChatScreen() {
       const data = await res.json();
       const reply =
         (data.reply || '').trim() || '죄송해요, 답변을 준비하지 못했어요. 다시 시도해주세요.';
-      setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
+      setMessages((prev) => [...prev, { role: 'assistant', content: reply, shops: data.shops || [] }]);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -85,25 +85,54 @@ export default function ChatScreen() {
           onContentSizeChange={scrollToEnd}
           keyboardShouldPersistTaps="handled"
         >
-          {messages.map((m, i) => (
-            <View
-              key={`${i}-${m.role}`}
-              style={[styles.bubbleRow, m.role === 'user' ? styles.rowUser : styles.rowAssistant]}
-            >
+          {messages.map((m, i) => {
+            const hasShops = m.role === 'assistant' && m.shops?.length > 0;
+            return (
               <View
-                style={[styles.bubble, m.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant]}
+                key={`${i}-${m.role}`}
+                style={[styles.bubbleRow, m.role === 'user' ? styles.rowUser : styles.rowAssistant]}
               >
-                <Text
-                  style={[
-                    styles.bubbleText,
-                    m.role === 'user' ? styles.bubbleTextUser : styles.bubbleTextAssistant,
-                  ]}
-                >
-                  {m.content}
-                </Text>
+                <View style={styles.msgCol}>
+                  <View
+                    style={[styles.bubble, m.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant]}
+                  >
+                    <Text
+                      style={[
+                        styles.bubbleText,
+                        m.role === 'user' ? styles.bubbleTextUser : styles.bubbleTextAssistant,
+                      ]}
+                    >
+                      {m.content}
+                    </Text>
+                  </View>
+
+                  {hasShops && (
+                    <View style={styles.shopCards}>
+                      {m.shops.map((s) => (
+                        <TouchableOpacity
+                          key={s.id}
+                          style={styles.shopCard}
+                          activeOpacity={0.8}
+                          onPress={() =>
+                            router.push({ pathname: '/shop-detail', params: { shop: JSON.stringify(s) } })
+                          }
+                        >
+                          <View style={styles.shopCardBody}>
+                            <Text style={styles.shopCardName} numberOfLines={1}>{s.name}</Text>
+                            <Text style={styles.shopCardMeta} numberOfLines={1}>
+                              {(s.address || '').split(' ').slice(0, 2).join(' ')}
+                              {s.phone ? ` · ${s.phone}` : ''}
+                            </Text>
+                          </View>
+                          <Text style={styles.shopCardArrow}>›</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
               </View>
-            </View>
-          ))}
+            );
+          })}
           {sending && (
             <View style={[styles.bubbleRow, styles.rowAssistant]}>
               <View style={[styles.bubble, styles.bubbleAssistant]}>
@@ -166,6 +195,22 @@ const styles = StyleSheet.create({
   bubbleText: { fontFamily: FONT.bodyMed, fontSize: 14, lineHeight: 20 },
   bubbleTextUser: { color: COLORS.onDark },
   bubbleTextAssistant: { color: COLORS.ink },
+  msgCol: { maxWidth: '86%' },
+  shopCards: { marginTop: 8, gap: 7 },
+  shopCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.bg,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    borderRadius: RADIUS.card,
+    paddingVertical: 11,
+    paddingHorizontal: 13,
+  },
+  shopCardBody: { flex: 1, marginRight: 10 },
+  shopCardName: { fontFamily: FONT.bodyBold, fontSize: 13.5, color: COLORS.ink },
+  shopCardMeta: { fontFamily: FONT.bodyMed, fontSize: 11.5, color: COLORS.inkMuted, marginTop: 3 },
+  shopCardArrow: { fontFamily: FONT.bodySemi, fontSize: 18, color: COLORS.accent },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',

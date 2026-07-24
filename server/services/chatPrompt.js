@@ -46,6 +46,30 @@ function getChatSystemPrompt() {
   return CHAT_SYSTEM_PROMPT + buildShopContext();
 }
 
+// AI 답변 안에 등장한 실제 등록 업체를 찾아 카드로 연결할 수 있게 반환.
+function matchShopsInText(text) {
+  if (!text) return [];
+  const shops = getSeatShops();
+  const matched = [];
+  const seen = new Set();
+  for (const s of shops) {
+    if (s.name && !seen.has(s.id) && text.includes(s.name)) {
+      seen.add(s.id);
+      matched.push({
+        id: s.id,
+        name: s.name,
+        address: s.address,
+        phone: s.phone,
+        lat: s.lat,
+        lng: s.lng,
+        category: s.category,
+        placeUrl: s.placeUrl,
+      });
+    }
+  }
+  return matched.slice(0, 5);
+}
+
 // user/assistant 메시지만 남기고, 최근 20개로 자르고, 앞쪽 assistant는 제거(대화는 user로 시작).
 function sanitizeMessages(messages) {
   const sanitized = (Array.isArray(messages) ? messages : [])
@@ -63,4 +87,4 @@ function sanitizeMessages(messages) {
   return sanitized;
 }
 
-module.exports = { CHAT_SYSTEM_PROMPT, getChatSystemPrompt, sanitizeMessages };
+module.exports = { CHAT_SYSTEM_PROMPT, getChatSystemPrompt, matchShopsInText, sanitizeMessages };
