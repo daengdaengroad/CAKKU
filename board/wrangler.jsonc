@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cakku-board",
+  "main": "src/worker.js",
+  "compatibility_date": "2025-06-01",
+
+  // public/ 의 파일은 Workers 가 직접 내보낸다. 없는 경로만 worker.js 로 들어온다.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+
+  // database_id 는 `npx wrangler d1 create cakku-board` 가 찍어 주는 값으로 채운다.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cakku-board",
+      "database_id": "PUT-YOUR-D1-DATABASE-ID-HERE"
+    }
+  ],
+
+  "observability": { "enabled": true }
+}
