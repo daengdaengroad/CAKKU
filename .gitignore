@@ -34,6 +34,10 @@ yarn-error.*
 .env
 .env*.local
 server/.env
+board/.env
+
+# 현황판 로컬 개발용 저장소 (DATABASE_URL 없을 때)
+board/.data/
 
 # typescript
 *.tsbuildinfo
