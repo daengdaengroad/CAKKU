@@ -1,0 +1,1499 @@
+<!-- 현황판 본문. 파일은 이 한 벌뿐이고 두 곳에서 그대로 쓴다.
+       · board 서버(/)에서 서빙 — 이때만 /api/health 가 응답해 기기 간 동기화가 켜진다
+       · Claude 아티팩트로 게시 — 외부 통신이 막혀 있어 동기화 카드는 숨고, 브라우저 저장으로만 동작한다
+     아티팩트 게시 규칙에 맞춰 doctype/html/head/body 태그 없이 본문만 담는다. -->
+<title>인건비 서류 월별 제출 현황판</title>
+<style>
+  :root {
+    --bg: #f4f6f9;
+    --card: #ffffff;
+    --text: #1a1f2b;
+    --muted: #66707f;
+    --line: #e2e7ed;
+    --line-strong: #c9d1da;
+    --accent: #2f5aa8;
+    --accent-bg: #e7eef9;
+    --done: #2c7a4b;
+    --done-bg: #e4f2e9;
+    --wip: #a2700a;
+    --wip-bg: #fbf1d8;
+    --none-bg: #f2f4f7;
+    --org: #5b4a97;
+    --org-bg: #ede9f7;
+    --emp: #a85426;
+    --emp-bg: #f9ebe1;
+    --ins: #17706b;
+    --ins-bg: #e0f0ee;
+    --bad: #b3352b;
+    --bad-bg: #fbe9e7;
+    --shadow: 0 1px 2px rgba(26,31,43,.06), 0 1px 3px rgba(26,31,43,.04);
+    --radius: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151a; --card: #1a1e25; --text: #e4e8ee; --muted: #929ba8;
+      --line: #2a303a; --line-strong: #39414d;
+      --accent: #7ba9ea; --accent-bg: #182740;
+      --done: #63b87c; --done-bg: #16301f;
+      --wip: #d9af52; --wip-bg: #33290f;
+      --none-bg: #20252d;
+      --org: #a99ae0; --org-bg: #262040;
+      --emp: #de9a6d; --emp-bg: #362419;
+      --ins: #6fc4bb; --ins-bg: #12302d;
+      --bad: #ef8a80; --bad-bg: #3a1c19;
+      --shadow: 0 1px 2px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12151a; --card: #1a1e25; --text: #e4e8ee; --muted: #929ba8;
+    --line: #2a303a; --line-strong: #39414d;
+    --accent: #7ba9ea; --accent-bg: #182740;
+    --done: #63b87c; --done-bg: #16301f;
+    --wip: #d9af52; --wip-bg: #33290f;
+    --none-bg: #20252d;
+    --org: #a99ae0; --org-bg: #262040;
+    --emp: #de9a6d; --emp-bg: #362419;
+    --ins: #6fc4bb; --ins-bg: #12302d;
+    --bad: #ef8a80; --bad-bg: #3a1c19;
+    --shadow: 0 1px 2px rgba(0,0,0,.4);
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f6f9; --card: #ffffff; --text: #1a1f2b; --muted: #66707f;
+    --line: #e2e7ed; --line-strong: #c9d1da;
+    --accent: #2f5aa8; --accent-bg: #e7eef9;
+    --done: #2c7a4b; --done-bg: #e4f2e9;
+    --wip: #a2700a; --wip-bg: #fbf1d8;
+    --none-bg: #f2f4f7;
+    --org: #5b4a97; --org-bg: #ede9f7;
+    --emp: #a85426; --emp-bg: #f9ebe1;
+    --ins: #17706b; --ins-bg: #e0f0ee;
+    --bad: #b3352b; --bad-bg: #fbe9e7;
+    --shadow: 0 1px 2px rgba(26,31,43,.06), 0 1px 3px rgba(26,31,43,.04);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 28px 20px 64px;
+    font-family: "Pretendard", "Pretendard Variable", "Apple SD Gothic Neo",
+                 "Malgun Gothic", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 1320px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  b, strong { font-weight: 600; }
+
+  /* ---- 헤더 ---- */
+  header.top { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; }
+  .titles { flex: 1 1 300px; }
+  h1 { font-size: clamp(19px, 2.4vw, 22px); margin: 0; letter-spacing: -.3px; text-wrap: balance; font-weight: 700; }
+  .sub { font-size: 13px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+  .tools { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  select, button, input[type="text"] {
+    font-family: inherit; font-size: 13px; color: var(--text);
+    background: var(--card); border: 1px solid var(--line-strong);
+    border-radius: 8px; padding: 8px 12px;
+  }
+  button { cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button.ghost { background: transparent; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 18px 20px;
+  }
+  .card h2 { font-size: 14px; margin: 0 0 5px; font-weight: 700; letter-spacing: -.2px; }
+  .card .hint { font-size: 12.5px; color: var(--muted); margin: 0 0 15px; line-height: 1.6; }
+
+  /* ---- 요약 ---- */
+  .summary { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .big { font-size: 27px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.5px; }
+  .big small { font-size: 13px; font-weight: 400; color: var(--muted); margin-left: 5px; letter-spacing: 0; }
+  .bar { flex: 1 1 200px; height: 8px; border-radius: 5px; background: var(--line); overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; background: var(--done); transition: width .35s ease; }
+  @media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } }
+
+  /* ---- 지원금 집행 ---- */
+  .bhead { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .bhead h2 { margin: 0; }
+  .blimit { margin-left: auto; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .blimit input {
+    width: 130px; text-align: right; font-size: 13px; font-weight: 600; padding: 6px 9px;
+    font-variant-numeric: tabular-nums; border-color: var(--line);
+  }
+  .blimit input:focus { border-color: var(--accent); outline: none; }
+
+  .bnums { display: flex; gap: 12px 32px; flex-wrap: wrap; margin-bottom: 14px; }
+  .bstat { display: flex; flex-direction: column; gap: 6px; }
+  .blabel { font-size: 11.5px; color: var(--muted); font-weight: 600; letter-spacing: .2px; }
+  .bval { font-size: 25px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.6px; line-height: 1; }
+  .bval.left { color: var(--done); }
+  .bval.warn { color: var(--wip); }
+  .bval.over { color: var(--bad); }
+  .bstat.pctstat { margin-left: auto; align-items: flex-end; }
+  /* 집행액이 급여와 사업주 4대보험 중 어디서 왔는지 한 줄로 보여준다 */
+  .bsplit { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; line-height: 1.5; }
+  .bsplit b { color: var(--text); font-weight: 600; }
+  .bsplit .ins { color: var(--ins); font-weight: 600; }
+  .bsplit:empty { display: none; }
+
+  .bbar { height: 12px; border-radius: 7px; background: var(--line); overflow: hidden; }
+  .bbar > i { display: block; height: 100%; width: 0; background: var(--done); transition: width .35s ease, background .25s; }
+  .bbar > i.warn { background: var(--wip); }
+  .bbar > i.over { background: var(--bad); }
+  @media (prefers-reduced-motion: reduce) { .bbar > i { transition: none; } }
+
+  .bnote { font-size: 12.5px; color: var(--muted); margin: 12px 0 0; line-height: 1.6; }
+  .bnote.over { color: var(--bad); background: var(--bad-bg); padding: 9px 12px; border-radius: 8px; font-weight: 600; }
+
+  .legend { display: flex; gap: 8px 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 15px; align-items: center; }
+  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; border: 1px solid var(--line-strong); }
+  .pill { font-size: 11px; font-weight: 700; border-radius: 4px; padding: 2px 6px; }
+  .pill.org { color: var(--org); background: var(--org-bg); }
+  .pill.emp { color: var(--emp); background: var(--emp-bg); }
+  .pill.ins { color: var(--ins); background: var(--ins-bg); }
+  .legend .right { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+  /* ---- 데스크톱 표 ---- */
+  .scroll { overflow-x: auto; margin: 0 -20px; padding: 0 20px; }
+  table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 1180px; font-size: 13px; }
+  th, td { border-bottom: 1px solid var(--line); padding: 0; text-align: center; }
+  thead th {
+    position: sticky; z-index: 2; background: var(--card);
+    font-weight: 600; font-size: 12px; color: var(--muted);
+    padding: 9px 6px; line-height: 1.45; vertical-align: bottom;
+  }
+  thead tr:first-child th { top: 0; }
+  thead th.grouped { border-bottom: 1px solid var(--line); }
+  thead th.solo, thead th.sub { border-bottom: 2px solid var(--line-strong); }
+  thead th .no { display: block; font-size: 11px; color: var(--accent); font-weight: 700; margin-bottom: 3px; }
+  thead th.sub { font-size: 11.5px; font-weight: 700; padding: 5px 4px; letter-spacing: .2px; }
+  thead th.sub[data-w="org"] { color: var(--org); background: var(--org-bg); }
+  thead th.sub[data-w="emp"] { color: var(--emp); background: var(--emp-bg); }
+  th.gstart, td.gstart { border-left: 1px solid var(--line-strong); }
+
+  th.rowhead, td.rowhead {
+    text-align: left; padding: 10px 12px; font-weight: 600;
+    white-space: nowrap; width: 96px; font-variant-numeric: tabular-nums;
+  }
+  tbody tr:hover td { background: rgba(127,127,127,.045); }
+  tr.current td.rowhead { color: var(--accent); }
+  tr.current td.rowhead::after {
+    content: "이번 달"; font-size: 10px; font-weight: 700; background: var(--accent-bg);
+    color: var(--accent); border-radius: 4px; padding: 2px 5px; margin-left: 6px; letter-spacing: -.2px;
+  }
+
+  .cell {
+    display: block; width: 100%; border: 0; border-radius: 0; background: transparent;
+    padding: 11px 2px; font-size: 12px; font-weight: 600; color: var(--muted);
+  }
+  .cell[data-s="0"] { background: var(--none-bg); color: var(--muted); }
+  .cell[data-s="1"] { background: var(--wip-bg); color: var(--wip); }
+  .cell[data-s="2"] { background: var(--done-bg); color: var(--done); }
+  .cell:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  td.prog { width: 82px; font-size: 12px; color: var(--muted); padding: 0 8px; font-variant-numeric: tabular-nums; }
+  td.prog b { color: var(--text); }
+  td.memo { width: 170px; padding: 4px 8px; }
+  td.memo input { width: 100%; border: 1px solid transparent; background: transparent; padding: 6px 8px; font-size: 12px; border-radius: 6px; }
+  td.memo input:hover { border-color: var(--line); }
+  td.memo input:focus { border-color: var(--accent); outline: none; background: var(--card); }
+
+  /* ---- 모바일 카드 ---- */
+  #cards { display: none; flex-direction: column; gap: 8px; }
+  .mcard { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .mcard.now { border-color: var(--accent); }
+  .mhead {
+    width: 100%; display: flex; align-items: center; gap: 10px;
+    padding: 13px 14px; background: transparent; border: 0; border-radius: 0; text-align: left;
+  }
+  .mhead:hover { color: var(--text); border-color: transparent; }
+  .mmonth { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .mcard.now .mmonth { color: var(--accent); }
+  .mnow { font-size: 10px; font-weight: 700; background: var(--accent-bg); color: var(--accent); border-radius: 4px; padding: 2px 5px; }
+  .mcount { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .mcount.full { color: var(--done); font-weight: 700; }
+  .mchev { color: var(--muted); font-size: 11px; transition: transform .2s; }
+  .mcard.open .mchev { transform: rotate(180deg); }
+  @media (prefers-reduced-motion: reduce) { .mchev { transition: none; } }
+  .mbody { display: none; padding: 2px 14px 14px; flex-direction: column; gap: 12px; }
+  .mcard.open .mbody { display: flex; }
+  .mrow { display: flex; flex-direction: column; gap: 6px; }
+  .mname { font-size: 12.5px; font-weight: 600; line-height: 1.4; }
+  .mname .no { color: var(--accent); font-weight: 700; margin-right: 5px; }
+  .mbtns { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 6px; }
+  .mbtn {
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 8px;
+    font-size: 12px; font-weight: 600; display: flex; align-items: center;
+    justify-content: center; gap: 6px; min-height: 42px;
+  }
+  .mbtn[data-s="0"] { background: var(--none-bg); color: var(--muted); }
+  .mbtn[data-s="1"] { background: var(--wip-bg); color: var(--wip); border-color: transparent; }
+  .mbtn[data-s="2"] { background: var(--done-bg); color: var(--done); border-color: transparent; }
+  .mbtn:hover { color: inherit; border-color: var(--line-strong); }
+  .mbtn .who { font-size: 10.5px; font-weight: 700; border-radius: 4px; padding: 2px 5px; }
+  .mbtn .who[data-w="org"] { color: var(--org); background: var(--org-bg); }
+  .mbtn .who[data-w="emp"] { color: var(--emp); background: var(--emp-bg); }
+  .mmemo { width: 100%; border: 1px solid var(--line); background: transparent; padding: 9px 10px; font-size: 12.5px; border-radius: 8px; }
+  .mmemo:focus { border-color: var(--accent); outline: none; }
+
+  @media (max-width: 760px) {
+    body { padding: 20px 14px 48px; }
+    .card { padding: 15px 15px; }
+    #docTable { display: none; }   /* 서류 매트릭스만 숨기고 급여 표는 가로 스크롤로 유지 */
+    #cards { display: flex; }
+    .tools { width: 100%; }
+    .tools select, .tools button { flex: 1 1 auto; }
+    .legend .right { margin-left: 0; width: 100%; }
+    /* 집행 · 잔액 · 소진율이 한 줄에 들어오도록 좁힌다 */
+    .bnums { gap: 14px 16px; }
+    .bval { font-size: 20px; letter-spacing: -.4px; }
+    .bstat.pctstat { margin-left: 0; align-items: flex-start; }
+    .blimit { margin-left: 0; }
+    .blimit input { width: 118px; }
+  }
+
+  /* ---- 급여 표 ---- */
+  /* 표가 화면 폭만큼 늘어나면 입력칸이 과하게 길어진다 — 내용만큼만 차지하게 둔다 */
+  table.pay { width: auto; min-width: 0; }
+  table.pay th { text-align: right; padding: 9px 10px; border-bottom: 2px solid var(--line-strong); white-space: nowrap; }
+  table.pay th.rowhead, table.pay td.rowhead { text-align: left; width: auto; padding: 10px 10px 10px 2px; }
+  table.pay td { text-align: right; }
+  table.pay th .unit { display: block; font-size: 10.5px; font-weight: 500; color: var(--muted); margin-top: 2px; }
+  .payin {
+    width: 142px; border: 1px solid transparent; background: transparent;
+    padding: 10px 11px; font-size: 13px; text-align: right; border-radius: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .payin:hover { border-color: var(--line); }
+  .payin:focus { border-color: var(--accent); outline: none; background: var(--card); }
+  .payin.pending { color: var(--muted); }
+
+  /* 체크한 금액만 집행으로 합산한다 */
+  .paycell { display: flex; align-items: center; justify-content: flex-end; gap: 7px; padding-right: 2px; }
+  .paychk { width: 16px; height: 16px; flex-shrink: 0; margin: 0; cursor: pointer; accent-color: var(--done); }
+  .paychk:disabled { opacity: .35; cursor: default; }
+  td.paytot { padding: 9px 12px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+  td.paytot.has { color: var(--text); }
+  tr.paysum td { border-top: 2px solid var(--line-strong); border-bottom: 0; padding: 11px 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  tr.paysum td.rowhead { color: var(--muted); font-weight: 600; }
+  tr.paysum td.grand { color: var(--accent); }
+  .empty { font-size: 12.5px; color: var(--muted); padding: 12px 2px; }
+
+  /* ---- 사업주 4대보험 열 ---- */
+  /* 급여가 아니라 사업주 본인 부담 보험료 — 색과 경계선으로 구분해 둔다 */
+  table.pay th.inscol, table.pay td.inscol { border-left: 1px solid var(--line-strong); }
+  table.pay th.inscol { color: var(--ins); background: var(--ins-bg); border-bottom-color: var(--ins); }
+  table.pay th.inscol .unit { color: var(--ins); }
+  td.inscol .paychk { accent-color: var(--ins); }
+  tr.paysum td.inscol { color: var(--ins); }
+  /* 전역 input[type="text"] 규칙보다 뒤·같은 순위여야 색이 먹는다 */
+  input[type="text"].ownerin {
+    width: 100%; min-width: 104px; border: 1px solid transparent; background: transparent;
+    color: var(--ins); font-weight: 700; font-size: 12.5px; text-align: right;
+    padding: 4px 6px; border-radius: 5px;
+  }
+  input[type="text"].ownerin:hover { border-color: var(--ins); }
+  input[type="text"].ownerin:focus { border-color: var(--ins); outline: none; background: var(--card); }
+
+  /* 급여 표 기본값보다 뒤에 와야 덮어쓴다 — 근로자 2명까지 가로 스크롤 없이 */
+  @media (max-width: 760px) {
+    table.pay th { padding: 8px 4px; font-size: 11.5px; }
+    table.pay th.rowhead, table.pay td.rowhead { padding: 9px 4px 9px 0; font-size: 12px; }
+    .payin { width: 96px; font-size: 12px; padding: 9px 5px; }
+    .paycell { gap: 5px; padding-right: 0; }
+    .paychk { width: 15px; height: 15px; }
+    td.paytot { padding: 9px 4px; font-size: 11.5px; }
+    tr.paysum td { padding: 11px 4px; font-size: 12px; }
+    input[type="text"].ownerin { min-width: 88px; font-size: 11.5px; padding: 4px 3px; }
+    /* 좁은 화면에서는 월 합계 열을 접는다 — 같은 값이 연간 합계와 집행 현황에 있다 */
+    .montot { display: none; }
+  }
+
+  /* ---- 기기 간 동기화 ---- */
+  .sync { padding: 13px 16px; }
+  .syncrow { display: flex; align-items: center; gap: 11px; flex-wrap: wrap; }
+  .sdot { width: 9px; height: 9px; border-radius: 50%; background: var(--line-strong); flex-shrink: 0; }
+  .sdot[data-s="on"]   { background: var(--done); }
+  .sdot[data-s="busy"] { background: var(--wip); }
+  .sdot[data-s="err"]  { background: var(--bad); }
+  .stext { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 220px; }
+  .stext b { font-size: 13px; }
+  .stext span { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+  .sbtns { display: flex; gap: 7px; flex-wrap: wrap; }
+  .sbtns button { padding: 7px 11px; font-size: 12.5px; }
+  @media (max-width: 760px) {
+    .sbtns { width: 100%; }
+    .sbtns button { flex: 1 1 auto; }
+  }
+
+  /* ---- 안내 문구 ---- */
+  .notes { list-style: none; padding: 0; margin: 16px 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.75; display: flex; flex-direction: column; gap: 4px; }
+  .notes b { color: var(--text); }
+
+  /* ---- 최초 1회 ---- */
+  .worker { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 9px; }
+  .worker-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .worker-head input { flex: 1; min-width: 0; font-weight: 700; font-size: 14px; border: 1px solid transparent; background: transparent; padding: 5px 8px; border-radius: 6px; }
+  .worker-head input:hover { border-color: var(--line); }
+  .worker-head input:focus { border-color: var(--accent); outline: none; }
+  .worker-head .count { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .worker-head .count.full { color: var(--done); font-weight: 700; }
+  .del { border: 0; background: transparent; color: var(--muted); font-size: 17px; line-height: 1; padding: 4px 8px; border-radius: 6px; }
+  .del:hover { color: #d0473f; background: rgba(208,71,63,.1); }
+  .once-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 4px; }
+  .once-item { display: flex; align-items: flex-start; gap: 9px; padding: 8px 9px; border-radius: 7px; cursor: pointer; font-size: 12.5px; line-height: 1.5; }
+  .once-item:hover { background: rgba(127,127,127,.06); }
+  .once-item input { margin: 2px 0 0; width: 16px; height: 16px; flex-shrink: 0; cursor: pointer; accent-color: var(--done); }
+  .once-item.on span { color: var(--muted); text-decoration: line-through; }
+
+  footer { text-align: center; font-size: 12px; color: var(--muted); }
+
+  /* ---- 토스트 ---- */
+  #toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 12px);
+    background: var(--text); color: var(--card); font-size: 13px; font-weight: 600;
+    padding: 10px 16px; border-radius: 8px; opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s; z-index: 10; max-width: 90vw; text-align: center;
+  }
+  #toast.on { opacity: 1; transform: translate(-50%, 0); }
+</style>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="titles">
+      <h1>인건비 서류 월별 제출 현황판</h1>
+      <div class="sub">칸을 누르면 <b>미제출 → 준비중 → 제출완료</b> 순으로 바뀝니다. 입력한 내용은 이 브라우저에 저장됩니다.</div>
+    </div>
+    <div class="tools">
+      <select id="yearSel" aria-label="연도 선택"></select>
+      <button class="ghost" id="codeCopyBtn">코드 복사</button>
+      <button class="ghost" id="codePasteBtn">코드 입력</button>
+      <button class="ghost" id="exportBtn">백업 저장</button>
+      <button class="ghost" id="importBtn">백업 열기</button>
+      <input type="file" id="importFile" accept="application/json" hidden>
+    </div>
+  </header>
+
+  <section class="card sync" id="syncCard" hidden>
+    <div class="syncrow">
+      <span class="sdot" id="syncDot"></span>
+      <div class="stext">
+        <b id="syncTitle">기기 간 동기화</b>
+        <span id="syncMsg">이 기기에만 저장되고 있습니다.</span>
+      </div>
+      <div class="sbtns" id="syncBtns"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="bhead">
+      <h2>인건비 지원금 집행 현황</h2>
+      <label class="blimit">한도 <input type="text" inputmode="numeric" id="limitIn" aria-label="인건비 지원 한도"> 원</label>
+    </div>
+    <div class="bnums">
+      <div class="bstat"><span class="blabel">집행</span><span class="bval" id="usedVal">0원</span><span class="bsplit" id="usedSplit"></span></div>
+      <div class="bstat"><span class="blabel">잔액</span><span class="bval left" id="leftVal">0원</span></div>
+      <div class="bstat pctstat"><span class="blabel">소진율</span><span class="bval" id="usedPct">0%</span></div>
+    </div>
+    <div class="bbar"><i id="budgetBar"></i></div>
+    <p class="bnote" id="budgetNote"></p>
+  </section>
+
+  <section class="card">
+    <div class="summary">
+      <div class="big"><span id="doneN">0</span><small>/ <span id="totN">0</span>건 제출완료</small></div>
+      <div class="bar"><i id="bar"></i></div>
+      <div class="big" style="font-size:18px" id="pct">0%</div>
+    </div>
+    <div class="legend">
+      <div><span class="sw" style="background:var(--none-bg)"></span>미제출</div>
+      <div><span class="sw" style="background:var(--wip-bg)"></span>준비중</div>
+      <div><span class="sw" style="background:var(--done-bg)"></span>제출완료</div>
+      <div><span class="pill org">사업장</span> <span class="pill emp">근로자</span> 각각 발급 필요</div>
+      <div class="right"><span id="yearLabel"></span> 기준 · 매월 <span id="perMonth">9</span>건 × 12개월</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>매월 제출 서류</h2>
+    <p class="hint">사업장 / 근로자로 각각 발급받아야 하는 서류는 칸을 나눠 두었습니다.</p>
+    <div class="scroll" id="docTable">
+      <table>
+        <thead>
+          <tr id="head1"></tr>
+          <tr id="head2"></tr>
+        </thead>
+        <tbody id="body"></tbody>
+      </table>
+    </div>
+    <div id="cards"></div>
+    <ul class="notes" id="docNotes"></ul>
+  </section>
+
+  <section class="card">
+    <h2>월별 세전 급여 · 사업주 4대보험</h2>
+    <p class="hint">지급을 마친 달은 금액 왼쪽 <b>체크박스</b>를 켜세요. <b>체크한 금액만</b> 위 집행 현황에 합산됩니다. 체크 전 금액은 흐리게 표시됩니다. <b>⑤ 입금확인증</b>에 찍힌 입금액과 대조할 때 쓰세요.<br>맨 오른쪽 <span class="pill ins">사업주 4대보험</span> 열에는 사업주 본인 부담 보험료를 넣습니다. 근로자 급여와 합쳐 한도에서 함께 차감됩니다. 이름을 눌러 수정할 수 있습니다.</p>
+    <div class="scroll" id="payWrap"></div>
+  </section>
+
+  <section class="card">
+    <h2>최초 1회 제출 서류</h2>
+    <p class="hint">근로자별로 최초 1회만 제출하면 되는 서류입니다. 이름을 눌러 수정할 수 있습니다.</p>
+    <div id="workers"></div>
+    <button id="addWorker">근로자 추가</button>
+  </section>
+
+  <footer><button class="ghost" id="resetBtn">전체 초기화</button></footer>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ---------- 서류 정의 ---------- */
+/* parts 가 2개인 서류는 사업장 / 근로자로 각각 발급해야 하는 항목 */
+const DOC_GROUPS = [
+  { no: "①", title: "사업장 보험료<br>월별 납부확인서",
+    desc: "고지산출내역이 아닌 <b>납부확인서</b>로 제출",
+    parts: [{ id: "ins", w: null }] },
+  { no: "②", title: "건강 · 장기요양보험료<br>납부확인서",
+    desc: "사업장 / 근로자의 납부확인서를 <b>각각</b> 발급",
+    parts: [{ id: "health-org", w: "org" }, { id: "health-emp", w: "emp" }] },
+  { no: "③", title: "연금산정용<br>가입내역 확인서",
+    desc: "사업장 / 근로자의 연금보험료를 <b>각각</b> 발급",
+    parts: [{ id: "pen-org", w: "org" }, { id: "pen-emp", w: "emp" }] },
+  { no: "④", title: "산재 · 고용<br>부과내역 조회",
+    desc: "사업장 / 근로자 부과내역을 <b>각각</b> 조회",
+    parts: [{ id: "emp-org", w: "org" }, { id: "emp-emp", w: "emp" }] },
+  { no: "⑤", title: "입금확인증",
+    desc: "출금계좌·입금계좌가 모두 명시되고, 입금액(근로자 인건비)이 명시되어야 함",
+    parts: [{ id: "deposit", w: null }] },
+  { no: "⑥", title: "구버전 창업기업<br>사업비 지급요청서",
+    desc: "",
+    parts: [{ id: "request", w: null }] },
+];
+
+const W_LABEL = { org: "사업장", emp: "근로자" };
+const plain = (s) => s.replace(/<br\s*\/?>/g, " ").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+
+/* 표에 실제로 그려질 칸 목록 (그룹 → 개별 칸으로 펼침) */
+const COLS = [];
+DOC_GROUPS.forEach((g) => {
+  g.parts.forEach((p, i) => {
+    COLS.push({
+      id: p.id, w: p.w, group: g, first: i === 0,
+      label: `${g.no} ${plain(g.title)}` + (p.w ? ` · ${W_LABEL[p.w]}` : ""),
+    });
+  });
+});
+
+const ONCE_DOCS = [
+  "근로자 청렴서약서",
+  "근로자 이력서 양식",
+  "근로자의 신분증",
+  "근로자의 통장 사본",
+  "소득금액증명",
+  "근로소득원천징수영수증 (3년 내 소득이 있는 경우) 또는 사실증명원 (소득 없는 경우)",
+];
+
+const STATE_LABEL = ["미제출", "준비중", "완료"];
+const KEY = "laborDocBoard_v2";
+const OLD_KEY = "laborDocBoard_v1";
+const NOW = new Date();
+
+/* ---------- 기기 간 동기화 ---------- */
+/* 같은 주소를 연 기기들이 '동기화 키' 하나를 공유한다. 키를 아는 쪽만 읽고 쓸 수 있으니
+   키가 곧 비밀번호다 — 그래서 주소창이나 링크에는 절대 싣지 않고, 직접 입력하게 한다.
+   동기화 서버가 없는 곳(아티팩트, 로컬 파일)에서는 아래 initSync 가 조용히 물러나고
+   지금까지처럼 브라우저 저장 + 코드 복사만 동작한다. */
+const SYNC_KEY_STORE = "laborDocBoard_syncKey";
+const SYNC_KEY_RE = /^[a-z0-9]{20,48}$/;
+const PUSH_DELAY = 1200;      // 입력이 멎고 이만큼 지나면 올린다
+const PULL_EVERY = 30000;     // 화면을 보고 있는 동안 이 간격으로 받아온다
+
+let syncAvail = false;        // 이 주소가 동기화를 지원하는가
+let syncKey = null;
+let syncRev = 0;              // 마지막으로 주고받은 서버 버전
+let pushTimer = null;
+let pushing = false;
+let pushAgain = false;
+let applyingRemote = false;   // 받아온 내용을 그리는 중 — 그걸 다시 올리면 안 된다
+
+const boardUrl = (k) => "api/board/" + k;
+const JSON_HEAD = { "Content-Type": "application/json" };
+
+function newSyncKey() {
+  const a = new Uint8Array(24);
+  crypto.getRandomValues(a);
+  const alpha = "abcdefghijklmnopqrstuvwxyz0123456789";
+  return Array.from(a, (b) => alpha[b % alpha.length]).join("");
+}
+
+function stamp(iso) {
+  try {
+    return new Date(iso).toLocaleString("ko-KR",
+      { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  } catch (e) { return ""; }
+}
+
+function syncPaint(state, msg) {
+  const dot = document.getElementById("syncDot");
+  if (!dot) return;
+  dot.dataset.s = state;
+  document.getElementById("syncTitle").textContent =
+    syncKey ? "기기 간 동기화 켜짐" : "기기 간 동기화";
+  document.getElementById("syncMsg").textContent = msg;
+}
+
+function storeSyncKey(k) {
+  try { if (k) localStorage.setItem(SYNC_KEY_STORE, k); else localStorage.removeItem(SYNC_KEY_STORE); }
+  catch (e) { /* 저장 못 해도 이번 세션 동안은 동작한다 */ }
+}
+
+/* 입력 중에는 받아온 내용으로 화면을 갈아끼우지 않는다 — 커서가 튀기 때문 */
+const busyEditing = () =>
+  pushTimer !== null ||
+  (document.activeElement && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName));
+
+function renderSyncBtns() {
+  const box = document.getElementById("syncBtns");
+  if (!box) return;
+  box.innerHTML = "";
+  const add = (label, fn) => {
+    const b = document.createElement("button");
+    b.className = "ghost";
+    b.textContent = label;
+    b.addEventListener("click", fn);
+    box.appendChild(b);
+  };
+  if (syncKey) {
+    add("키 보기", () => showSyncKey(false));
+    add("지금 받아오기", () => pull(true));
+    add("연결 끊기", disconnectSync);
+  } else {
+    add("이 기기 내용으로 시작", createSync);
+    add("기존 키로 연결", joinSync);
+  }
+}
+
+function schedulePush() {
+  if (!syncAvail || !syncKey || applyingRemote) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => { pushTimer = null; pushNow(); }, PUSH_DELAY);
+  syncPaint("busy", "입력을 저장하는 중…");
+}
+
+async function pushNow(force) {
+  if (!syncAvail || !syncKey || applyingRemote) return;
+  if (pushing) { pushAgain = true; return; }
+  pushing = true;
+  try {
+    const res = await fetch(boardUrl(syncKey), {
+      method: "PUT",
+      headers: JSON_HEAD,
+      body: JSON.stringify({ rev: syncRev, data: db, force: force === true }),
+    });
+    if (res.status === 409) { handleConflict(await res.json()); return; }
+    if (res.status === 429) {
+      syncPaint("err", "요청이 너무 잦습니다. 잠시 뒤 다시 저장됩니다.");
+      return;
+    }
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const j = await res.json();
+    syncRev = j.rev;
+    syncPaint("on", "저장했습니다 · " + stamp(j.updatedAt));
+  } catch (e) {
+    syncPaint("err", "서버에 저장하지 못했습니다. 인터넷 연결을 확인해 주세요. 입력한 내용은 이 기기에 남아 있습니다.");
+  } finally {
+    pushing = false;
+    if (pushAgain) { pushAgain = false; schedulePush(); }
+  }
+}
+
+async function pull(manual) {
+  if (!syncAvail || !syncKey) return;
+  if (!manual && (pushing || busyEditing())) return;
+  try {
+    const res = await fetch(boardUrl(syncKey), { cache: "no-store" });
+    if (res.status === 404) {
+      syncPaint("busy", "서버에 아직 올라간 내용이 없습니다. 입력하면 올라갑니다.");
+      return;
+    }
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const j = await res.json();
+    if (j.rev > syncRev) applyRemote(j);
+    else syncPaint("on", "최신 상태입니다 · " + stamp(j.updatedAt));
+  } catch (e) {
+    syncPaint("err", "서버에서 가져오지 못했습니다. 인터넷 연결을 확인해 주세요.");
+  }
+}
+
+function applyRemote(payload) {
+  applyingRemote = true;
+  try {
+    db = normalize(payload.data);
+    syncRev = payload.rev;
+    saveLocal();
+    yearSel.value = db.year;
+    renderAll();
+  } finally {
+    applyingRemote = false;
+  }
+  syncPaint("on", "다른 기기에서 저장한 내용을 받아왔습니다 · " + stamp(payload.updatedAt));
+}
+
+/* 두 기기가 같은 버전 위에서 각자 고쳤을 때. 조용히 덮어쓰면 한쪽 입력이 사라지므로 물어본다. */
+function handleConflict(server) {
+  const takeServer = confirm(
+    "다른 기기에서 먼저 저장한 내용이 있습니다.\n\n" +
+    "[확인] 다른 기기 내용을 가져옵니다 — 이 기기에서 방금 입력한 내용은 사라집니다\n" +
+    "[취소] 이 기기 내용으로 덮어씁니다 — 다른 기기에서 입력한 내용은 사라집니다"
+  );
+  if (takeServer) applyRemote(server);
+  else { syncRev = server.rev; pushNow(true); }
+}
+
+async function createSync() {
+  syncKey = newSyncKey();
+  syncRev = 0;
+  storeSyncKey(syncKey);
+  renderSyncBtns();
+  await pushNow();
+  showSyncKey(true);
+}
+
+async function showSyncKey(first) {
+  try { await navigator.clipboard.writeText(syncKey); } catch (e) { /* 직접 복사하면 된다 */ }
+  const head = first
+    ? "동기화를 켰습니다. 다른 기기에서 이 주소를 열고 '기존 키로 연결'에 아래 키를 넣으세요."
+    : "다른 기기의 '기존 키로 연결'에 넣을 동기화 키입니다.";
+  prompt(head + "\n키를 아는 사람은 누구나 이 현황판을 열 수 있으니 남에게 알려주지 마세요.", syncKey);
+}
+
+async function joinSync() {
+  const raw = prompt("다른 기기에서 만든 동기화 키를 붙여넣으세요.\n이 기기에 저장된 기존 기록은 서버 내용으로 대체됩니다.");
+  if (!raw) return;
+  const key = raw.trim().toLowerCase();
+  if (!SYNC_KEY_RE.test(key)) { toast("키 형식이 올바르지 않습니다. 영문 소문자와 숫자로 된 24자입니다."); return; }
+
+  syncPaint("busy", "불러오는 중…");
+  try {
+    const res = await fetch(boardUrl(key), { cache: "no-store" });
+    if (res.status === 404) {
+      syncPaint("err", "그 키로 저장된 현황판이 없습니다. 키를 다시 확인해 주세요.");
+      return;
+    }
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const j = await res.json();
+    syncKey = key;
+    storeSyncKey(key);
+    renderSyncBtns();
+    applyRemote(j);
+  } catch (e) {
+    syncPaint("err", "연결하지 못했습니다. 인터넷 연결을 확인해 주세요.");
+  }
+}
+
+function disconnectSync() {
+  if (!confirm("이 기기에서 동기화를 끕니다.\n입력한 내용은 이 기기에 그대로 남고, 서버에 올라간 내용도 지워지지 않습니다.")) return;
+  clearTimeout(pushTimer);
+  pushTimer = null;
+  syncKey = null;
+  syncRev = 0;
+  storeSyncKey(null);
+  renderSyncBtns();
+  syncPaint("off", "이 기기에만 저장되고 있습니다.");
+}
+
+async function initSync() {
+  try {
+    const res = await fetch("api/health", { cache: "no-store" });
+    if (!res.ok) return;
+    const j = await res.json();
+    if (!j || !j.ok) return;
+  } catch (e) {
+    return;   // 동기화 서버가 없는 곳 — 카드를 숨긴 채 지금까지처럼 동작한다
+  }
+
+  syncAvail = true;
+  document.getElementById("syncCard").hidden = false;
+  try { syncKey = localStorage.getItem(SYNC_KEY_STORE) || null; } catch (e) { /* 무시 */ }
+  renderSyncBtns();
+
+  if (syncKey) {
+    syncPaint("busy", "불러오는 중…");
+    await pull(true);
+  } else {
+    syncPaint("off", "지금은 이 기기에만 저장됩니다. 폰에서도 같은 내용을 보려면 동기화를 켜세요.");
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      // 탭을 덮기 전에 밀린 저장을 먼저 올린다
+      if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; pushNow(); }
+    } else {
+      pull(false);
+    }
+  });
+  setInterval(() => { if (!document.hidden) pull(false); }, PULL_EVERY);
+}
+
+/* ---------- 저장소 ---------- */
+/* 항상 이 브라우저에 먼저 저장한다. 동기화는 그 위에 얹는 것이라
+   서버가 죽어도, 인터넷이 끊겨도 입력은 그대로 남는다. */
+function saveLocal() {
+  try { localStorage.setItem(KEY, JSON.stringify(db)); }
+  catch (e) { toast("저장에 실패했습니다. 브라우저의 저장 공간을 확인해 주세요."); }
+}
+
+function save() {
+  saveLocal();
+  schedulePush();
+}
+
+/* v1(인덱스 기반, 사업장/근로자 미분리) → v2(id 기반) 이관.
+   분리 전 칸은 '사업장' 쪽으로 옮기고 근로자 칸은 미제출로 시작. */
+const V1_MAP = { 0: "ins", 1: "health-org", 2: "pen-org", 3: "emp-org", 4: "deposit", 5: "request" };
+
+function load() {
+  try {
+    const cur = JSON.parse(localStorage.getItem(KEY));
+    if (cur) return cur;
+  } catch (e) { /* 손상된 데이터는 새로 시작 */ }
+
+  try {
+    const old = JSON.parse(localStorage.getItem(OLD_KEY));
+    if (old && old.years) {
+      Object.values(old.years).forEach((yd) => {
+        const moved = {};
+        Object.entries(yd.cells || {}).forEach(([k, v]) => {
+          const [m, d] = k.split("-");
+          if (V1_MAP[d]) moved[`${m}-${V1_MAP[d]}`] = v;
+        });
+        yd.cells = moved;
+      });
+      return old;
+    }
+  } catch (e) { /* 이관 실패 시 새로 시작 */ }
+
+  return {};
+}
+
+let idSeq = 0;
+const newId = () => "w" + Date.now().toString(36) + (idSeq++).toString(36);
+
+function normalize(o) {
+  o = o || {};
+  o.years   = o.years   || {};
+  o.workers = o.workers || [{ name: "근로자 1", docs: {} }];
+  o.year    = o.year    || NOW.getFullYear();
+  o.limits  = o.limits  || {};   // 연도별 인건비 지원 한도
+  // 사업주 본인 부담 4대보험료. 근로자 목록에는 넣지 않지만 급여와 같은 저장소를 쓴다
+  o.owner   = o.owner   || {};
+  if (!o.owner.name) o.owner.name = "사업주";
+  // 급여는 근로자 id 로 묶어야 목록 순서가 바뀌어도 금액이 따라간다
+  o.workers.forEach((w) => { if (!w.id) w.id = newId(); w.docs = w.docs || {}; });
+  Object.values(o.years).forEach((yd) => {
+    yd.cells = yd.cells || {};
+    yd.memos = yd.memos || {};
+    yd.pay   = yd.pay   || {};
+    yd.paid  = yd.paid  || {};   // 실제 집행(지급) 완료 표시
+  });
+  return o;
+}
+
+/* ---------- 링크로 현황 주고받기 ---------- */
+function encodeState() {
+  const bytes = new TextEncoder().encode(JSON.stringify(db));
+  let bin = "";
+  bytes.forEach((b) => { bin += String.fromCharCode(b); });
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function decodeState(s) {
+  const bin = atob(s.replace(/-/g, "+").replace(/_/g, "/"));
+  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+let db = normalize(load());
+
+/* 링크에 현황이 담겨 있으면 물어보고 반영 */
+(function readLink() {
+  const m = location.hash.match(/^#d=(.+)$/);
+  if (!m) return;
+  try {
+    const incoming = normalize(decodeState(m[1]));
+    if (confirm("링크에 담긴 현황을 불러올까요?\n이 기기에 저장된 기존 기록은 대체됩니다.")) {
+      db = incoming;
+    }
+  } catch (e) {
+    toast("링크의 현황 정보를 읽지 못했습니다.");
+  }
+  history.replaceState(null, "", location.pathname + location.search);
+})();
+
+save();
+
+function yearData(y) {
+  if (!db.years[y]) db.years[y] = { cells: {}, memos: {}, pay: {}, paid: {} };
+  return db.years[y];
+}
+const cellState = (yd, m, id) => yd.cells[m + "-" + id] || 0;
+
+function bump(m, id) {
+  const yd = yearData(+db.year);
+  yd.cells[m + "-" + id] = (cellState(yd, m, id) + 1) % 3;
+  save();
+  renderTable();
+  renderCards();
+  updateSummary();
+}
+
+/* ---------- 연도 선택 ---------- */
+const yearSel = document.getElementById("yearSel");
+for (let y = NOW.getFullYear() - 2; y <= NOW.getFullYear() + 2; y++) {
+  const o = document.createElement("option");
+  o.value = y; o.textContent = y + "년";
+  yearSel.appendChild(o);
+}
+yearSel.value = db.year;
+yearSel.addEventListener("change", () => {
+  db.year = +yearSel.value; save();
+  renderTable(); renderCards(); renderPay(); updateSummary();
+});
+
+/* ---------- 표 헤더 (2단: 서류 / 사업장·근로자) ---------- */
+function renderHead() {
+  const h1 = document.getElementById("head1");
+  const h2 = document.getElementById("head2");
+  h1.innerHTML = '<th class="rowhead solo" rowspan="2" scope="col">월</th>';
+  h2.innerHTML = "";
+
+  DOC_GROUPS.forEach((g) => {
+    const split = g.parts.length > 1;
+    const th = document.createElement("th");
+    th.scope = "col";
+    th.className = "gstart " + (split ? "grouped" : "solo");
+    th.colSpan = g.parts.length;
+    if (!split) th.rowSpan = 2;
+    th.title = plain(`${g.no} ${g.title}${g.desc ? " — " + g.desc : ""}`);
+    th.innerHTML = `<span class="no">${g.no}</span>${g.title}`;
+    h1.appendChild(th);
+
+    if (split) {
+      g.parts.forEach((p, i) => {
+        const sub = document.createElement("th");
+        sub.scope = "col";
+        sub.className = "sub" + (i === 0 ? " gstart" : "");
+        sub.dataset.w = p.w;
+        sub.textContent = W_LABEL[p.w];
+        h2.appendChild(sub);
+      });
+    }
+  });
+
+  h1.insertAdjacentHTML("beforeend",
+    '<th class="solo gstart" rowspan="2" scope="col">진행</th>' +
+    '<th class="solo" rowspan="2" scope="col">메모</th>');
+
+  requestAnimationFrame(() => {
+    const top = h1.getBoundingClientRect().height;
+    h2.querySelectorAll("th").forEach((th) => { th.style.top = top + "px"; });
+  });
+}
+
+/* ---------- 데스크톱 표 (12개월 × 9칸) ---------- */
+function renderTable() {
+  const y = +db.year;
+  const yd = yearData(y);
+  document.getElementById("yearLabel").textContent = y + "년";
+  document.getElementById("perMonth").textContent = COLS.length;
+
+  renderHead();
+
+  const body = document.getElementById("body");
+  body.innerHTML = "";
+
+  for (let m = 1; m <= 12; m++) {
+    const tr = document.createElement("tr");
+    if (isNow(y, m)) tr.className = "current";
+
+    const rh = document.createElement("td");
+    rh.className = "rowhead";
+    rh.textContent = m + "월";
+    tr.appendChild(rh);
+
+    COLS.forEach((col) => {
+      const s = cellState(yd, m, col.id);
+      const td = document.createElement("td");
+      if (col.first) td.className = "gstart";
+      const btn = document.createElement("button");
+      btn.className = "cell";
+      btn.dataset.s = s;
+      btn.textContent = STATE_LABEL[s];
+      btn.title = `${m}월 · ${col.label}`;
+      btn.setAttribute("aria-label", `${m}월 ${col.label} — ${STATE_LABEL[s]}`);
+      btn.addEventListener("click", () => bump(m, col.id));
+      td.appendChild(btn);
+      tr.appendChild(td);
+    });
+
+    const prog = document.createElement("td");
+    prog.className = "prog gstart";
+    prog.innerHTML = `<b>${monthDone(yd, m)}</b> / ${COLS.length}`;
+    tr.appendChild(prog);
+
+    const memo = document.createElement("td");
+    memo.className = "memo";
+    memo.appendChild(memoInput(yd, m));
+    tr.appendChild(memo);
+
+    body.appendChild(tr);
+  }
+}
+
+/* ---------- 모바일 카드 ---------- */
+const openMonths = new Set([NOW.getMonth() + 1]);
+
+function renderCards() {
+  const y = +db.year;
+  const yd = yearData(y);
+  const box = document.getElementById("cards");
+  box.innerHTML = "";
+
+  for (let m = 1; m <= 12; m++) {
+    const done = monthDone(yd, m);
+    const open = openMonths.has(m);
+
+    const card = document.createElement("section");
+    card.className = "mcard" + (open ? " open" : "") + (isNow(y, m) ? " now" : "");
+
+    const head = document.createElement("button");
+    head.className = "mhead";
+    head.setAttribute("aria-expanded", String(open));
+    head.innerHTML =
+      `<span class="mmonth">${m}월</span>` +
+      (isNow(y, m) ? '<span class="mnow">이번 달</span>' : "") +
+      `<span class="mcount${done === COLS.length ? " full" : ""}">${done} / ${COLS.length}</span>` +
+      '<span class="mchev">▾</span>';
+    head.addEventListener("click", () => {
+      open ? openMonths.delete(m) : openMonths.add(m);
+      renderCards();
+    });
+    card.appendChild(head);
+
+    const bd = document.createElement("div");
+    bd.className = "mbody";
+
+    DOC_GROUPS.forEach((g) => {
+      const row = document.createElement("div");
+      row.className = "mrow";
+      row.innerHTML = `<div class="mname"><span class="no">${g.no}</span>${g.title.replace(/<br\s*\/?>/g, " ")}</div>`;
+
+      const btns = document.createElement("div");
+      btns.className = "mbtns";
+      g.parts.forEach((p) => {
+        const s = cellState(yd, m, p.id);
+        const b = document.createElement("button");
+        b.className = "mbtn";
+        b.dataset.s = s;
+        b.innerHTML = (p.w ? `<span class="who" data-w="${p.w}">${W_LABEL[p.w]}</span>` : "") +
+                      `<span>${STATE_LABEL[s]}</span>`;
+        b.setAttribute("aria-label",
+          `${m}월 ${plain(g.title)}${p.w ? " " + W_LABEL[p.w] : ""} — ${STATE_LABEL[s]}`);
+        b.addEventListener("click", () => bump(m, p.id));
+        btns.appendChild(b);
+      });
+      row.appendChild(btns);
+      bd.appendChild(row);
+    });
+
+    const memo = memoInput(yd, m);
+    memo.className = "mmemo";
+    bd.appendChild(memo);
+
+    card.appendChild(bd);
+    box.appendChild(card);
+  }
+}
+
+/* ---------- 공용 ---------- */
+const isNow = (y, m) => y === NOW.getFullYear() && m === NOW.getMonth() + 1;
+const monthDone = (yd, m) => COLS.reduce((a, c) => a + (cellState(yd, m, c.id) === 2 ? 1 : 0), 0);
+
+function memoInput(yd, m) {
+  const inp = document.createElement("input");
+  inp.type = "text";
+  inp.placeholder = "메모";
+  inp.value = yd.memos[m] || "";
+  inp.setAttribute("aria-label", `${m}월 메모`);
+  inp.addEventListener("input", () => { yd.memos[m] = inp.value; save(); });
+  return inp;
+}
+
+/* ---------- 월별 세전 급여 ---------- */
+const won = (n) => n.toLocaleString("ko-KR");
+const digits = (s) => Number(String(s).replace(/[^\d]/g, "")) || 0;
+const payOf = (yd, m, wid) => yd.pay[m + "-" + wid] || 0;
+const paidOf = (yd, m, wid) => !!(yd.paid && yd.paid[m + "-" + wid]);
+
+/* 급여 표의 금액 열 = 근로자들 + 사업주 4대보험 한 칸.
+   합계·집행 계산이 모두 이 목록을 돌기 때문에 열을 늘려도 한 곳만 고치면 된다. */
+const OWNER_ID = "__owner";
+const payColumns = () =>
+  db.workers.map((w) => ({ id: w.id, name: w.name, kind: "pay" }))
+    .concat([{ id: OWNER_ID, name: db.owner.name, kind: "ins" }]);
+
+function renderPay() {
+  const yd = yearData(+db.year);
+  const wrap = document.getElementById("payWrap");
+  wrap.innerHTML = "";
+  renderLimit();
+
+  if (!db.workers.length) {
+    wrap.insertAdjacentHTML("beforeend",
+      '<p class="empty">등록된 근로자가 없습니다. 아래 &lsquo;근로자 추가&rsquo;로 등록하면 급여 열이 생깁니다.</p>');
+  }
+
+  const table = document.createElement("table");
+  table.className = "pay";
+
+  const thead = document.createElement("thead");
+  const hr = document.createElement("tr");
+  hr.innerHTML = '<th class="rowhead" scope="col">월</th>';
+  payColumns().forEach((c) => {
+    const th = document.createElement("th");
+    th.scope = "col";
+    th.dataset.head = c.id;
+    if (c.kind === "ins") {
+      th.className = "inscol";
+      th.appendChild(ownerNameInput());
+      th.insertAdjacentHTML("beforeend", '<span class="unit">4대보험 · 원</span>');
+    } else {
+      th.innerHTML = `${escapeHtml(c.name) || "이름 없음"}<span class="unit">세전 · 원</span>`;
+    }
+    hr.appendChild(th);
+  });
+  hr.insertAdjacentHTML("beforeend", '<th class="gstart montot" scope="col">월 합계<span class="unit">원</span></th>');
+  thead.appendChild(hr);
+  table.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+  for (let m = 1; m <= 12; m++) {
+    const tr = document.createElement("tr");
+    if (isNow(+db.year, m)) tr.className = "current";
+
+    const rh = document.createElement("td");
+    rh.className = "rowhead";
+    rh.textContent = m + "월";
+    tr.appendChild(rh);
+
+    payColumns().forEach((c) => {
+      const td = document.createElement("td");
+      if (c.kind === "ins") td.className = "inscol";
+      td.appendChild(payCell(yd, m, c));
+      tr.appendChild(td);
+    });
+
+    const tot = document.createElement("td");
+    tot.className = "paytot gstart montot";
+    tot.dataset.rowTot = m;
+    tr.appendChild(tot);
+
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+
+  const tfoot = document.createElement("tfoot");
+  const sr = document.createElement("tr");
+  sr.className = "paysum";
+  sr.innerHTML = '<td class="rowhead">연간 합계</td>';
+  payColumns().forEach((c) => {
+    const td = document.createElement("td");
+    td.dataset.colTot = c.id;
+    if (c.kind === "ins") td.className = "inscol";
+    sr.appendChild(td);
+  });
+  sr.insertAdjacentHTML("beforeend", '<td class="grand gstart montot" data-grand></td>');
+  tfoot.appendChild(sr);
+  table.appendChild(tfoot);
+
+  wrap.appendChild(table);
+  updatePayTotals();
+}
+
+function payCell(yd, m, c) {
+  const key = m + "-" + c.id;
+  const val = () => payOf(yd, m, c.id);
+  const label = c.kind === "ins"
+    ? `${c.name || "사업주"} 4대보험료`
+    : `${c.name} 세전 급여`;
+
+  const box = document.createElement("div");
+  box.className = "paycell";
+
+  const chk = document.createElement("input");
+  chk.type = "checkbox";
+  chk.className = "paychk";
+  chk.checked = paidOf(yd, m, c.id);
+  chk.title = c.kind === "ins" ? "납부 완료" : "집행(지급) 완료";
+  chk.setAttribute("aria-label", `${m}월 ${label} 집행 완료`);
+
+  const inp = document.createElement("input");
+  inp.type = "text";
+  inp.inputMode = "numeric";
+  inp.placeholder = "0";
+  inp.setAttribute("aria-label", `${m}월 ${label}`);
+  inp.value = val() ? won(val()) : "";
+
+  // 금액이 없으면 체크할 게 없고, 체크되지 않은 금액은 흐리게 보여준다
+  const sync = () => {
+    chk.disabled = !val();
+    inp.className = "payin" + (val() && !chk.checked ? " pending" : "");
+  };
+  sync();
+
+  chk.addEventListener("change", () => {
+    if (chk.checked) yd.paid[key] = true; else delete yd.paid[key];
+    save(); sync(); updatePayTotals();
+  });
+
+  // 입력 중에는 숫자만, 포커스를 벗어나면 천 단위로 구분해 보여준다
+  inp.addEventListener("focus", () => { inp.value = val() ? String(val()) : ""; inp.select(); });
+  inp.addEventListener("input", () => {
+    const n = digits(inp.value);
+    if (n) {
+      yd.pay[key] = n;
+    } else {
+      delete yd.pay[key];
+      delete yd.paid[key];        // 금액을 지우면 집행 표시도 함께 지운다
+      chk.checked = false;
+    }
+    save(); sync(); updatePayTotals();
+  });
+  inp.addEventListener("blur", () => { inp.value = val() ? won(val()) : ""; });
+
+  box.append(chk, inp);
+  return box;
+}
+
+/* 사업주 이름은 표 머리글에서 바로 고친다 — 열 전체를 다시 그리지 않아 입력 흐름이 끊기지 않는다 */
+function ownerNameInput() {
+  const inp = document.createElement("input");
+  inp.type = "text";
+  inp.className = "ownerin";
+  inp.value = db.owner.name;
+  inp.placeholder = "사업주";
+  inp.title = "사업주 이름";
+  inp.setAttribute("aria-label", "사업주 이름");
+  inp.addEventListener("input", () => { db.owner.name = inp.value; save(); });
+  return inp;
+}
+
+/* 합계는 체크된(집행 완료) 금액만 더한다 */
+const paidAmount = (yd, m, wid) => (paidOf(yd, m, wid) ? payOf(yd, m, wid) : 0);
+
+function updatePayTotals() {
+  const yd = yearData(+db.year);
+  const cols = payColumns();
+  let grand = 0;
+
+  for (let m = 1; m <= 12; m++) {
+    const rowSum = cols.reduce((a, c) => a + paidAmount(yd, m, c.id), 0);
+    grand += rowSum;
+    const cell = document.querySelector(`[data-row-tot="${m}"]`);
+    if (cell) {
+      cell.textContent = rowSum ? won(rowSum) : "—";
+      cell.classList.toggle("has", rowSum > 0);
+    }
+  }
+
+  cols.forEach((c) => {
+    let colSum = 0;
+    for (let m = 1; m <= 12; m++) colSum += paidAmount(yd, m, c.id);
+    const cell = document.querySelector(`[data-col-tot="${c.id}"]`);
+    if (cell) cell.textContent = colSum ? won(colSum) : "—";
+  });
+
+  const g = document.querySelector("[data-grand]");
+  if (g) g.textContent = grand ? won(grand) : "—";
+  updateBudget();
+}
+
+/* ---------- 지원금 집행 현황 ---------- */
+const DEFAULT_LIMIT = 50000000;   // 계명대 인건비 지원 한도 5천만원
+const limitOf = (y) => (db.limits[y] === undefined ? DEFAULT_LIMIT : db.limits[y]);
+
+function yearPayTotals() {
+  const yd = yearData(+db.year);
+  const cols = payColumns();
+  const t = { paid: 0, pending: 0, paidPay: 0, paidIns: 0 };
+  for (let m = 1; m <= 12; m++) {
+    cols.forEach((c) => {
+      const v = payOf(yd, m, c.id);
+      if (!v) return;
+      if (!paidOf(yd, m, c.id)) { t.pending += v; return; }
+      t.paid += v;
+      if (c.kind === "ins") t.paidIns += v; else t.paidPay += v;
+    });
+  }
+  return t;
+}
+
+function updateBudget() {
+  const y = +db.year;
+  const limit = limitOf(y);
+  const { paid: used, pending, paidPay, paidIns } = yearPayTotals();
+  const left = limit - used;
+  const pct = limit > 0 ? (used / limit) * 100 : 0;
+
+  const unset = limit <= 0;                       // 한도를 비워두면 잔액을 계산하지 않는다
+  const over = !unset && left < 0;
+  const warn = !unset && !over && pct >= 85;
+  const tone = over ? "over" : warn ? "warn" : "";
+
+  document.getElementById("usedVal").textContent = won(used) + "원";
+  document.getElementById("usedPct").textContent = unset ? "—" : Math.round(pct) + "%";
+
+  // 급여와 사업주 4대보험이 섞여 있을 때만 내역을 나눠 보여준다
+  const split = document.getElementById("usedSplit");
+  split.innerHTML = paidIns
+    ? `급여 <b>${won(paidPay)}</b> · 4대보험 <span class="ins">${won(paidIns)}</span>`
+    : "";
+
+  const leftEl = document.getElementById("leftVal");
+  leftEl.textContent = unset ? "—" : (over ? "-" + won(-left) : won(left)) + "원";
+  leftEl.className = "bval " + (unset ? "" : over ? "over" : warn ? "warn" : "left");
+
+  const bar = document.getElementById("budgetBar");
+  bar.style.width = unset ? "0%" : Math.min(100, Math.max(0, pct)) + "%";
+  bar.className = tone;
+
+  const note = document.getElementById("budgetNote");
+  note.className = "bnote" + (over ? " over" : "");
+  note.textContent = budgetNote(y, limit, used, left, over, unset) +
+    (pending ? ` 체크하지 않은 ${won(pending)}원은 아직 합산되지 않았습니다.` : "");
+}
+
+/* 남은 기간으로 나눈 월 평균 집행 가능액까지 알려준다 */
+function budgetNote(y, limit, used, left, over, unset) {
+  if (unset) return "한도를 입력하면 잔액과 소진율이 계산됩니다.";
+  if (over) return `한도를 ${won(-left)}원 초과했습니다. 초과분은 지원 대상에서 제외될 수 있으니 확인이 필요합니다.`;
+  if (used === 0) return "아직 집행된 금액이 없습니다. 지급을 마친 달의 체크박스를 켜면 합산됩니다.";
+
+  if (y === NOW.getFullYear()) {
+    const monthsLeft = 12 - NOW.getMonth();   // 이번 달 포함, 12월까지
+    if (monthsLeft > 0) {
+      return `${NOW.getMonth() + 1}월 기준 · 12월까지 남은 ${monthsLeft}개월 동안 ` +
+             `월 평균 ${won(Math.floor(left / monthsLeft))}원까지 집행할 수 있습니다.`;
+    }
+  }
+  return `${y}년 한도 ${won(limit)}원 중 ${won(left)}원이 남았습니다.`;
+}
+
+const limitIn = document.getElementById("limitIn");
+limitIn.addEventListener("focus", () => {
+  const v = limitOf(+db.year);
+  limitIn.value = v ? String(v) : "";
+  limitIn.select();
+});
+limitIn.addEventListener("input", () => {
+  db.limits[+db.year] = digits(limitIn.value);
+  save();
+  updateBudget();
+});
+limitIn.addEventListener("blur", () => { limitIn.value = won(limitOf(+db.year)); });
+
+function renderLimit() { limitIn.value = won(limitOf(+db.year)); }
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function renderNotes() {
+  const ul = document.getElementById("docNotes");
+  ul.innerHTML = "";
+  DOC_GROUPS.forEach((g) => {
+    const split = g.parts.length > 1;
+    const li = document.createElement("li");
+    li.innerHTML =
+      `<b>${g.no} ${g.title.replace(/<br\s*\/?>/g, " ")}</b>` +
+      (split ? ' <span class="pill org">사업장</span> <span class="pill emp">근로자</span>' : "") +
+      (g.desc ? " — " + g.desc : "");
+    ul.appendChild(li);
+  });
+}
+
+function renderWorkers() {
+  const box = document.getElementById("workers");
+  box.innerHTML = "";
+
+  db.workers.forEach((w, wi) => {
+    const done = ONCE_DOCS.reduce((a, _, i) => a + (w.docs[i] ? 1 : 0), 0);
+
+    const div = document.createElement("div");
+    div.className = "worker";
+
+    const head = document.createElement("div");
+    head.className = "worker-head";
+    const name = document.createElement("input");
+    name.type = "text";
+    name.value = w.name;
+    name.placeholder = "근로자 이름";
+    name.setAttribute("aria-label", "근로자 이름");
+    name.addEventListener("input", () => {
+      w.name = name.value; save();
+      // 급여 표 전체를 다시 그리면 입력 포커스를 잃으므로 머리글만 갱신
+      const th = document.querySelector(`[data-head="${w.id}"]`);
+      if (th) th.innerHTML = `${escapeHtml(w.name) || "이름 없음"}<span class="unit">세전 · 원</span>`;
+    });
+    const cnt = document.createElement("span");
+    cnt.className = "count" + (done === ONCE_DOCS.length ? " full" : "");
+    cnt.textContent = `${done} / ${ONCE_DOCS.length}`;
+    const del = document.createElement("button");
+    del.className = "del";
+    del.textContent = "×";
+    del.title = "근로자 삭제";
+    del.setAttribute("aria-label", `${w.name} 삭제`);
+    del.addEventListener("click", () => {
+      if (confirm(`'${w.name}' 항목을 삭제할까요?\n입력해둔 세전 급여도 함께 사라집니다.`)) {
+        db.workers.splice(wi, 1); save(); renderWorkers(); renderPay();
+      }
+    });
+    head.append(name, cnt, del);
+    div.appendChild(head);
+
+    const grid = document.createElement("div");
+    grid.className = "once-grid";
+    ONCE_DOCS.forEach((label, di) => {
+      const on = !!w.docs[di];
+      const item = document.createElement("label");
+      item.className = "once-item" + (on ? " on" : "");
+      item.innerHTML = `<input type="checkbox" ${on ? "checked" : ""}><span>${di + 1}. ${label}</span>`;
+      item.querySelector("input").addEventListener("change", (e) => {
+        w.docs[di] = e.target.checked; save(); renderWorkers();
+      });
+      grid.appendChild(item);
+    });
+    div.appendChild(grid);
+    box.appendChild(div);
+  });
+}
+
+document.getElementById("addWorker").addEventListener("click", () => {
+  db.workers.push({ id: newId(), name: "근로자 " + (db.workers.length + 1), docs: {} });
+  save(); renderWorkers(); renderPay();
+});
+
+function updateSummary() {
+  const yd = yearData(+db.year);
+  const total = 12 * COLS.length;
+  let done = 0;
+  for (let m = 1; m <= 12; m++) done += monthDone(yd, m);
+
+  const pct = Math.round((done / total) * 100);
+  document.getElementById("doneN").textContent = done;
+  document.getElementById("totN").textContent = total;
+  document.getElementById("pct").textContent = pct + "%";
+  document.getElementById("bar").style.width = pct + "%";
+}
+
+/* ---------- 토스트 ---------- */
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("on"), 2600);
+}
+
+/* ---------- 내보내기 ---------- */
+/* PC ↔ 폰 사이에 현황을 옮기는 코드. 파일을 주고받지 않아도 되도록 문자열 하나로 만든다. */
+document.getElementById("codeCopyBtn").addEventListener("click", async () => {
+  const code = encodeState();
+  try {
+    await navigator.clipboard.writeText(code);
+    toast("현황 코드를 복사했습니다. 다른 기기에서 '코드 입력'에 붙여넣으세요.");
+  } catch (e) {
+    prompt("아래 코드를 복사해 다른 기기의 '코드 입력'에 붙여넣으세요.", code);
+  }
+});
+
+document.getElementById("codePasteBtn").addEventListener("click", () => {
+  const raw = prompt("다른 기기에서 복사한 현황 코드를 붙여넣으세요.\n이 기기에 저장된 기존 기록은 대체됩니다.");
+  if (!raw) return;
+  applyCode(raw);
+});
+
+function applyCode(raw) {
+  const trimmed = raw.trim();
+  const code = (trimmed.match(/#d=(.+)$/) || [null, trimmed])[1];
+  try {
+    db = normalize(decodeState(code));
+  } catch (e) {
+    toast("코드를 읽지 못했습니다. 복사한 코드가 온전한지 확인해 주세요.");
+    return;
+  }
+  save(); yearSel.value = db.year;
+  renderAll();
+  toast("현황을 불러왔습니다.");
+}
+
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `인건비서류현황_${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("백업 파일을 저장했습니다.");
+});
+
+document.getElementById("importBtn").addEventListener("click", () => document.getElementById("importFile").click());
+document.getElementById("importFile").addEventListener("change", (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      db = normalize(JSON.parse(r.result));
+      save(); yearSel.value = db.year;
+      renderAll();
+      toast("백업을 불러왔습니다.");
+    } catch (err) {
+      toast("파일을 읽지 못했습니다. 백업 저장으로 받은 JSON 파일인지 확인해 주세요.");
+    }
+  };
+  r.readAsText(f);
+  e.target.value = "";
+});
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (!confirm("모든 체크 상태와 메모를 지웁니다. 계속할까요?")) return;
+  try { localStorage.removeItem(KEY); localStorage.removeItem(OLD_KEY); } catch (e) { /* 무시 */ }
+  db = normalize(null);
+  save(); yearSel.value = db.year;
+  renderAll();
+  toast("초기화했습니다.");
+});
+
+function renderAll() {
+  renderTable();
+  renderCards();
+  renderWorkers();
+  renderPay();
+  updateSummary();
+}
+
+renderNotes();
+renderAll();
+initSync();
+</script>

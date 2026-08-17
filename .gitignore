@@ -34,6 +34,10 @@ yarn-error.*
 .env
 .env*.local
 server/.env
+board/.dev.vars
+
+# 현황판 로컬 개발 상태 (로컬 D1 등)
+board/.wrangler/
 
 # typescript
 *.tsbuildinfo

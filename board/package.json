@@ -1,0 +1,16 @@
+{
+  "name": "cakku-board",
+  "version": "1.0.0",
+  "private": true,
+  "description": "인건비 서류 월별 제출 현황판 — 기기 간 동기화 (Cloudflare Workers + D1)",
+  "scripts": {
+    "dev": "wrangler dev --port 3100",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create cakku-board",
+    "db:init": "wrangler d1 execute cakku-board --local --file=schema.sql",
+    "db:init:remote": "wrangler d1 execute cakku-board --remote --file=schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
