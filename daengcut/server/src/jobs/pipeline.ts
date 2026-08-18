@@ -11,6 +11,7 @@ import { applyScript, buildBaseTimeline } from '../timeline/build.js';
 import type { AnalyzedSource } from '../timeline/build.js';
 import { clipDuration, clipOffsets, timelineDuration } from '../timeline/types.js';
 import type { Timeline } from '../timeline/types.js';
+import { isAiConfigured } from '../ai/anthropic.js';
 import { generateScript } from '../ai/script.js';
 import type { ScriptClipInput } from '../ai/script.js';
 import { synthesizeNarration } from '../ai/narrate.js';
@@ -174,7 +175,14 @@ export async function autoEdit(
 
   let script = project.script;
 
-  if (opts.writeScript) {
+  // 키가 없으면 대본만 건너뛰고 컷은 그대로 잡아준다.
+  // 여기서 실패로 끝내면 사용자는 아무것도 못 받는데, 컷만 있어도 자막은 직접 쓸 수 있다.
+  const canWriteScript = opts.writeScript && isAiConfigured();
+  if (opts.writeScript && !canWriteScript) {
+    log.warn('ANTHROPIC_API_KEY 가 없어 대본 없이 컷만 잡습니다.');
+  }
+
+  if (canWriteScript) {
     ctx.step('장면 캡처하는 중', 0.15);
     const clipInputs = await collectClipFrames(project, timeline, sources);
 
