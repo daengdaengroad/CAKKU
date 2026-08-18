@@ -1,3 +1,5 @@
+import { useRef, useState } from 'react';
+import { api, ApiError } from '../api';
 import { ColorField, Field, NumberField, SelectField, SliderField, ToggleField } from './fields';
 import { layoutClips, newLocalId, totalDuration } from '../timelineUtils';
 import type { Selection } from './TimelineStrip';
@@ -284,17 +286,21 @@ export function ClipPanel({
 
 // ── 내레이션 ───────────────────────────────────────────────────────
 export function NarrationPanel({
+  projectId,
   timeline,
   ttsEnabled,
   busy,
   onChange,
+  onMusicChange,
   onRenarrate,
   onSeek,
 }: {
+  projectId: string;
   timeline: Timeline;
   ttsEnabled: boolean;
   busy: boolean;
   onChange: (narration: NarrationLine[]) => void;
+  onMusicChange: (music: Timeline['music']) => void;
   onRenarrate: () => void;
   onSeek: (time: number) => void;
 }) {
@@ -352,7 +358,93 @@ export function NarrationPanel({
       </ul>
 
       {timeline.narration.length === 0 && <p className="empty">내레이션이 없습니다.</p>}
+
+      <hr />
+
+      <MusicSection projectId={projectId} timeline={timeline} onChange={onMusicChange} />
     </div>
+  );
+}
+
+/** 배경음악. 영상보다 짧으면 렌더링할 때 반복 재생된다. */
+function MusicSection({
+  projectId,
+  timeline,
+  onChange,
+}: {
+  projectId: string;
+  timeline: Timeline;
+  onChange: (music: Timeline['music']) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const music = timeline.music;
+
+  const pick = async (file: File | undefined) => {
+    if (!file) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const { file: relativePath } = await api.uploadMusic(projectId, file);
+      onChange({
+        file: relativePath,
+        // 내레이션과 원본 소리를 덮지 않도록 낮게 시작한다.
+        gain: music?.gain ?? 0.18,
+        fadeInSec: 0.6,
+        fadeOutSec: 1.2,
+      });
+    } catch (err) {
+      setError(err instanceof ApiError ? `${err.message} ${err.hint ?? ''}` : '올리지 못했습니다.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="panel-head">
+        <h3>배경음악</h3>
+        <button type="button" className="mini" onClick={() => inputRef.current?.click()} disabled={uploading}>
+          {uploading ? '올리는 중…' : music ? '바꾸기' : '+ 음악 넣기'}
+        </button>
+      </div>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="audio/*"
+        hidden
+        onChange={(event) => {
+          void pick(event.target.files?.[0]);
+          event.target.value = '';
+        }}
+      />
+
+      {error && <p className="banner error">{error}</p>}
+
+      {music ? (
+        <>
+          <p className="empty">{music.file.split('/').pop()}</p>
+          <SliderField
+            label="음량"
+            value={music.gain}
+            min={0}
+            max={0.6}
+            step={0.01}
+            format={(v) => `${Math.round(v * 100)}%`}
+            onChange={(gain) => onChange({ ...music, gain })}
+          />
+          <button type="button" className="mini danger" onClick={() => onChange(null)}>
+            음악 빼기
+          </button>
+        </>
+      ) : (
+        <p className="empty">
+          저작권 걱정 없는 음원을 쓰세요. 유튜브 오디오 보관함에서 받은 파일이면 안전합니다.
+        </p>
+      )}
+    </>
   );
 }
 
@@ -509,6 +601,8 @@ export function MetaPanel({
 
 // ── 자동 편집 설정 ─────────────────────────────────────────────────
 export function AutoPanel({
+  projectId,
+  sourceCount,
   buildOptions,
   scriptOptions,
   aiEnabled,
@@ -516,7 +610,10 @@ export function AutoPanel({
   onBuildChange,
   onScriptChange,
   onRun,
+  onSourcesAdded,
 }: {
+  projectId: string;
+  sourceCount: number;
   buildOptions: BuildOptions;
   scriptOptions: ScriptOptions;
   aiEnabled: boolean;
@@ -524,9 +621,52 @@ export function AutoPanel({
   onBuildChange: (options: BuildOptions) => void;
   onScriptChange: (options: ScriptOptions) => void;
   onRun: (writeScript: boolean) => void;
+  onSourcesAdded: () => void;
 }) {
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
+  const [adding, setAdding] = useState(false);
+
+  const addVideos = async (files: File[]) => {
+    if (files.length === 0) return;
+    setAdding(true);
+    try {
+      await api.uploadSources(projectId, files, false);
+      onSourcesAdded();
+    } finally {
+      setAdding(false);
+    }
+  };
+
   return (
     <div className="panel">
+      <div className="panel-head">
+        <h3>원본 영상 {sourceCount}개</h3>
+        <button
+          type="button"
+          className="mini"
+          onClick={() => videoInputRef.current?.click()}
+          disabled={busy || adding}
+        >
+          {adding ? '올리는 중…' : '+ 영상 추가'}
+        </button>
+      </div>
+      <input
+        ref={videoInputRef}
+        type="file"
+        accept="video/*"
+        multiple
+        hidden
+        onChange={(event) => {
+          void addVideos([...(event.target.files ?? [])]);
+          event.target.value = '';
+        }}
+      />
+      <p className="empty">
+        영상을 추가한 뒤 아래 "컷 + 대본 다시 만들기"를 누르면 전부 합쳐 다시 편집합니다.
+      </p>
+
+      <hr />
+
       <h3>자동 편집 설정</h3>
 
       <SliderField

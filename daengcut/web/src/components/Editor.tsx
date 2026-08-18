@@ -13,7 +13,7 @@ type Tab = 'caption' | 'clip' | 'narration' | 'style' | 'meta' | 'auto';
 const TABS: { id: Tab; label: string }[] = [
   { id: 'caption', label: '자막' },
   { id: 'clip', label: '컷' },
-  { id: 'narration', label: '내레이션' },
+  { id: 'narration', label: '소리' },
   { id: 'style', label: '스타일' },
   { id: 'meta', label: '유튜브' },
   { id: 'auto', label: '자동 편집' },
@@ -261,10 +261,12 @@ export function Editor({ projectId, health, fonts, onBack }: Props) {
               )}
               {tab === 'narration' && (
                 <NarrationPanel
+                  projectId={projectId}
                   timeline={timeline}
                   ttsEnabled={health.features.tts}
                   busy={busy}
                   onChange={applyNarration}
+                  onMusicChange={(music) => applyTimeline({ ...timeline, music })}
                   onRenarrate={() => void run(() => api.narrate(projectId))}
                   onSeek={setPlayhead}
                 />
@@ -281,6 +283,9 @@ export function Editor({ projectId, health, fonts, onBack }: Props) {
               )}
               {tab === 'auto' && (
                 <AutoPanel
+                  projectId={projectId}
+                  sourceCount={project.sources.length}
+                  onSourcesAdded={() => void reload()}
                   buildOptions={project.buildOptions}
                   scriptOptions={project.scriptOptions}
                   aiEnabled={health.features.script}

@@ -81,6 +81,12 @@ export const api = {
       xhr.send(form);
     }),
 
+  uploadMusic: async (id: string, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return request<{ file: string }>(`/api/projects/${id}/music`, { method: 'POST', body: form });
+  },
+
   autoEdit: (id: string, writeScript: boolean) =>
     request<{ started: boolean }>(`/api/projects/${id}/auto`, {
       method: 'POST',

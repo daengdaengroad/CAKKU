@@ -12,6 +12,7 @@ import {
   getProject,
   listProjects,
   resolveProjectPath,
+  toProjectRelative,
   updateProject,
 } from '../store/projects.js';
 import {
@@ -79,6 +80,32 @@ function toIncomingFiles(files: Express.Multer.File[]): IncomingFile[] {
     storedPath: file.path,
   }));
 }
+
+const AUDIO_EXTENSIONS = /\.(mp3|m4a|aac|wav|ogg|flac)$/i;
+
+const uploadMusic = multer({
+  storage: multer.diskStorage({
+    destination(req, _file, cb) {
+      try {
+        cb(null, ensureProjectDirs(projectIdOf(req.params)).audio);
+      } catch (err) {
+        cb(err as Error, '');
+      }
+    },
+    filename(_req, file, cb) {
+      const ext = path.extname(file.originalname).toLowerCase() || '.mp3';
+      cb(null, `bgm_${newShortId()}${ext}`);
+    },
+  }),
+  limits: { fileSize: 60 * 1024 * 1024, files: 1 },
+  fileFilter(_req, file, cb) {
+    if (!AUDIO_EXTENSIONS.test(file.originalname)) {
+      cb(new AppError('음악 파일이 아닙니다 (mp3, m4a, wav 등).', 400));
+      return;
+    }
+    cb(null, true);
+  },
+});
 
 // ── 프로젝트 CRUD ──────────────────────────────────────────────────
 projectsRouter.get('/', async (_req, res, next) => {
@@ -304,6 +331,24 @@ projectsRouter.get('/:id/files/*splat', async (req, res, next) => {
     res.sendFile(absPath, { dotfiles: 'deny' }, (err) => {
       if (err) next(err);
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * 배경음악 업로드.
+ * 파일만 저장하고 타임라인에 반영하는 건 UI 가 한다 (타임라인 수정 경로를 하나로 유지).
+ */
+projectsRouter.post('/:id/music', uploadMusic.single('file'), async (req, res, next) => {
+  try {
+    const file = req.file;
+    if (!file) throw new AppError('올린 음악 파일이 없습니다.', 400);
+
+    const projectId = projectIdOf(req.params);
+    await getProject(projectId);
+
+    res.status(201).json({ file: toProjectRelative(projectId, file.path) });
   } catch (err) {
     next(err);
   }
