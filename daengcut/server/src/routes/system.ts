@@ -1,10 +1,12 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { Router } from 'express';
 import { config } from '../config.js';
 import { isAiConfigured } from '../ai/anthropic.js';
 import { isTtsConfigured } from '../ai/tts.js';
-import { availableFonts } from '../render/fonts.js';
+import { availableFonts, resolveFont } from '../render/fonts.js';
 import { ffmpegPath } from '../media/ffmpeg.js';
+import { AppError } from '../util/errors.js';
 
 export const systemRouter = Router();
 
@@ -52,4 +54,30 @@ systemRouter.get('/fonts', (_req, res) => {
       .filter((font) => font.hangul)
       .map((font) => ({ family: font.family })),
   );
+});
+
+const FONT_MIME: Record<string, string> = {
+  '.ttf': 'font/ttf',
+  '.otf': 'font/otf',
+  '.ttc': 'font/collection',
+};
+
+/**
+ * 자막 폰트 파일 자체를 내려준다.
+ * 편집 화면이 실제 렌더링과 같은 폰트로 미리보기를 그리기 위해 필요하다.
+ */
+systemRouter.get('/fonts/file', (req, res, next) => {
+  try {
+    const family = typeof req.query.family === 'string' ? req.query.family : '';
+    const font = resolveFont(FONT_DIR, family);
+    if (!font) throw new AppError('폰트를 찾을 수 없습니다.', 404);
+
+    const mime = FONT_MIME[path.extname(font.file).toLowerCase()] ?? 'application/octet-stream';
+    res.setHeader('Content-Type', mime);
+    // 폰트는 잘 안 바뀌므로 오래 캐시해도 된다.
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    fs.createReadStream(font.file).pipe(res);
+  } catch (err) {
+    next(err);
+  }
 });

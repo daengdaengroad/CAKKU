@@ -24,6 +24,7 @@ app.use('/api/youtube', youtubeRouter);
 
 // 빌드된 편집 UI 를 같이 서빙한다 (npm run build 후 단일 프로세스로 배포할 때).
 const webDist = path.resolve(import.meta.dirname, '..', '..', 'web', 'dist');
+log.info(`편집 UI 경로: ${webDist} (${fs.existsSync(webDist) ? '있음' : '없음'})`);
 if (fs.existsSync(webDist)) {
   app.use(express.static(webDist));
   app.get('*splat', (req, res, next) => {
