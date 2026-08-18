@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env
+.env.local
+
+# 작업 디렉터리 (원본 영상, 프레임, 렌더 결과물)
+workspace/
+storage/
+*.log
+
+# 다운로드 폰트
+assets/fonts/*.ttf
+assets/fonts/*.otf
+!assets/fonts/.gitkeep
+
+.DS_Store
