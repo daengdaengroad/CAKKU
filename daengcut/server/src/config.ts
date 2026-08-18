@@ -1,11 +1,17 @@
-import 'dotenv/config';
 import path from 'node:path';
 import fs from 'node:fs';
+import dotenv from 'dotenv';
+
+/** daengcut/ 폴더. server/src 와 server/dist 어느 쪽에서 실행해도 같은 곳을 가리킨다. */
+const repoRoot = path.resolve(import.meta.dirname, '..', '..');
+
+// dotenv 는 기본적으로 실행 위치(cwd)에서 .env 를 찾는다.
+// 서버는 server/ 안에서 실행되므로 경로를 명시하지 않으면 daengcut/.env 를 영영 못 읽는다.
+// (이미 셸에 설정된 환경변수는 그대로 우선한다)
+dotenv.config({ path: path.join(repoRoot, '.env') });
 
 function resolveWorkspace(): string {
   const raw = process.env.DAENGCUT_WORKSPACE?.trim() || './workspace';
-  // 레포 루트(daengcut/) 기준으로 잡아야 server/ 안에서 실행하든 루트에서 실행하든 같은 곳을 본다.
-  const repoRoot = path.resolve(import.meta.dirname, '..', '..');
   const abs = path.isAbsolute(raw) ? raw : path.resolve(repoRoot, raw);
   fs.mkdirSync(abs, { recursive: true });
   return abs;
