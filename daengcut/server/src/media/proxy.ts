@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { runFfmpeg } from './ffmpeg.js';
 import type { MediaInfo } from './probe.js';
@@ -11,6 +12,7 @@ export async function buildProxy(
   outDir: string,
   onProgress?: (ratio: number) => void,
 ): Promise<string> {
+  await fs.mkdir(outDir, { recursive: true });
   const outPath = path.join(outDir, 'proxy.mp4');
 
   await runFfmpeg(
@@ -40,6 +42,7 @@ export async function buildProxy(
 
 /** 프로젝트 목록에 띄울 대표 썸네일 */
 export async function buildThumbnail(info: MediaInfo, outDir: string): Promise<string> {
+  await fs.mkdir(outDir, { recursive: true });
   const outPath = path.join(outDir, 'thumb.jpg');
   const seek = Math.min(info.durationSec * 0.25, Math.max(0, info.durationSec - 0.2));
 
