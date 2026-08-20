@@ -36,9 +36,38 @@ async function writeAndMeasure(outPath: string, audio: Buffer): Promise<TtsResul
 
 // ── Google Cloud Text-to-Speech ────────────────────────────────────
 // 유튜브 업로드와 같은 GCP 프로젝트를 쓸 수 있어서 설정이 한 번에 끝난다.
+let googleAuth: { keyFile: string; auth: GoogleAuth } | null = null;
+
+/** 구글 API 호출용 액세스 토큰. 목소리 목록과 음성 합성이 같이 쓴다. */
+export async function googleAccessToken(): Promise<string> {
+  const keyFile = config.tts.google.credentials;
+
+  if (googleAuth?.keyFile !== keyFile) {
+    googleAuth = {
+      keyFile,
+      auth: new GoogleAuth({
+        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+        ...(keyFile ? { keyFile } : {}),
+      }),
+    };
+  }
+
+  try {
+    const token = await googleAuth.auth.getAccessToken();
+    if (!token) throw new Error('빈 토큰');
+    return token;
+  } catch (err) {
+    throw new AppError(
+      '구글 인증에 실패했습니다.',
+      401,
+      '서비스 계정 JSON 파일 경로가 맞는지, Cloud Text-to-Speech API 가 사용 설정되어 있는지 확인해 주세요. ' +
+        `(${String(err)})`,
+    );
+  }
+}
+
 class GoogleTts implements TtsProvider {
   readonly name = 'google';
-  private auth: GoogleAuth | null = null;
 
   get ready(): boolean {
     // GOOGLE_APPLICATION_CREDENTIALS 는 라이브러리가 환경변수로도 읽으므로
@@ -46,31 +75,11 @@ class GoogleTts implements TtsProvider {
     return true;
   }
 
-  private client(): GoogleAuth {
-    if (!this.auth) {
-      this.auth = new GoogleAuth({
-        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-        ...(config.tts.google.credentials ? { keyFile: config.tts.google.credentials } : {}),
-      });
-    }
-    return this.auth;
-  }
-
   async synthesize(req: TtsRequest): Promise<TtsResult> {
     const voiceName = req.voice || config.tts.google.voice;
     const languageCode = voiceName.split('-').slice(0, 2).join('-') || 'ko-KR';
 
-    let token: string | null | undefined;
-    try {
-      token = await this.client().getAccessToken();
-    } catch (err) {
-      throw new AppError(
-        '구글 TTS 인증에 실패했습니다.',
-        401,
-        '.env 의 GOOGLE_APPLICATION_CREDENTIALS 에 서비스 계정 JSON 경로가 맞는지 확인하세요. ' +
-          `(${String(err)})`,
-      );
-    }
+    const token = await googleAccessToken();
 
     const res = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize', {
       method: 'POST',

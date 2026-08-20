@@ -5,6 +5,7 @@ import { PreviewPlayer } from './PreviewPlayer';
 import { TimelineStrip } from './TimelineStrip';
 import type { Selection } from './TimelineStrip';
 import { AutoPanel, CaptionPanel, ClipPanel, MetaPanel, NarrationPanel, StylePanel } from './panels';
+import { SimpleCaptions } from './SimpleCaptions';
 import { YoutubeDialog } from './YoutubeDialog';
 import type { Caption, Clip, Health, JobState, NarrationLine, Project, Timeline } from '../types';
 
@@ -24,9 +25,29 @@ interface Props {
   health: Health;
   fonts: string[];
   onBack: () => void;
+  onOpenSettings: () => void;
 }
 
-export function Editor({ projectId, health, fonts, onBack }: Props) {
+/** 고급 편집을 켜둔 채로 나갔다 오면 그대로 유지되도록 브라우저에 기억해 둔다. */
+const ADVANCED_KEY = 'daengcut.advanced';
+
+function readAdvanced(): boolean {
+  try {
+    return window.localStorage.getItem(ADVANCED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeAdvanced(value: boolean) {
+  try {
+    window.localStorage.setItem(ADVANCED_KEY, value ? '1' : '0');
+  } catch {
+    /* 저장 못 해도 이번 세션 동안은 동작한다 */
+  }
+}
+
+export function Editor({ projectId, health, fonts, onBack, onOpenSettings }: Props) {
   const [project, setProject] = useState<Project | null>(null);
   const [timeline, setTimeline] = useState<Timeline | null>(null);
   const [job, setJob] = useState<JobState | null>(null);
@@ -37,6 +58,7 @@ export function Editor({ projectId, health, fonts, onBack }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [showUpload, setShowUpload] = useState(false);
+  const [advanced, setAdvanced] = useState(readAdvanced);
 
   const saveTimer = useRef<number | null>(null);
   const busy = job?.status === 'running';
@@ -142,6 +164,20 @@ export function Editor({ projectId, health, fonts, onBack }: Props) {
         </span>
 
         <div className="head-actions">
+          <label className="advanced-toggle" title="컷·소리·자막 스타일까지 직접 손보기">
+            <input
+              type="checkbox"
+              checked={advanced}
+              onChange={(event) => {
+                setAdvanced(event.target.checked);
+                writeAdvanced(event.target.checked);
+              }}
+            />
+            고급 편집
+          </label>
+          <button type="button" className="ghost" onClick={onOpenSettings} title="설정">
+            ⚙
+          </button>
           <button
             type="button"
             onClick={() => void run(() => api.render(projectId, 'final'))}
@@ -211,21 +247,39 @@ export function Editor({ projectId, health, fonts, onBack }: Props) {
               onSeek={setPlayhead}
               onPlayingChange={setPlaying}
             />
-            <TimelineStrip
-              timeline={timeline}
-              playhead={playhead}
-              selection={selection}
-              onSelect={setSelection}
-              onSeek={(time) => {
-                setPlaying(false);
-                setPlayhead(time);
-              }}
-              onClipsChange={applyClips}
-              onCaptionsChange={applyCaptions}
-            />
+            {advanced && (
+              <TimelineStrip
+                timeline={timeline}
+                playhead={playhead}
+                selection={selection}
+                onSelect={setSelection}
+                onSeek={(time) => {
+                  setPlaying(false);
+                  setPlayhead(time);
+                }}
+                onClipsChange={applyClips}
+                onCaptionsChange={applyCaptions}
+              />
+            )}
           </div>
 
           <div className="editor-right">
+            {!advanced ? (
+              <SimpleCaptions
+                timeline={timeline}
+                playhead={playhead}
+                aiEnabled={health.features.script}
+                busy={busy}
+                onRegenerate={() => void run(() => api.autoEdit(projectId, health.features.script))}
+                onSeek={(time) => {
+                  setPlaying(false);
+                  setPlayhead(time);
+                }}
+                onChange={applyCaptions}
+                onOpenSettings={onOpenSettings}
+              />
+            ) : (
+              <>
             <nav className="tabs">
               {TABS.map((item) => (
                 <button
@@ -302,6 +356,8 @@ export function Editor({ projectId, health, fonts, onBack }: Props) {
                 />
               )}
             </div>
+              </>
+            )}
           </div>
         </div>
       ) : (

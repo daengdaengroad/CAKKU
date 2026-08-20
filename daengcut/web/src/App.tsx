@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from './api';
 import { Editor } from './components/Editor';
 import { ProjectList } from './components/ProjectList';
+import { Settings } from './components/Settings';
 import type { Health } from './types';
 
 /**
@@ -25,16 +26,18 @@ function injectFontFaces(families: string[]) {
   document.head.append(style);
 }
 
-/** 주소창의 #프로젝트ID 로 화면을 정한다. 라우터를 따로 두기엔 화면이 둘뿐이다. */
-function projectIdFromHash(): string | null {
+/** 주소창의 해시로 화면을 정한다. 라우터를 따로 두기엔 화면이 몇 개 안 된다. */
+function routeFromHash(): { name: 'list' } | { name: 'settings' } | { name: 'project'; id: string } {
   const hash = window.location.hash.replace('#', '').trim();
-  return hash || null;
+  if (!hash) return { name: 'list' };
+  if (hash === 'settings') return { name: 'settings' };
+  return { name: 'project', id: hash };
 }
 
 export function App() {
   const [health, setHealth] = useState<Health | null>(null);
   const [fonts, setFonts] = useState<string[]>([]);
-  const [projectId, setProjectId] = useState<string | null>(projectIdFromHash());
+  const [route, setRoute] = useState(routeFromHash());
 
   useEffect(() => {
     api.health().then(setHealth).catch(() => setHealth(null));
@@ -49,28 +52,40 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    const onHashChange = () => setProjectId(projectIdFromHash());
+    const onHashChange = () => setRoute(routeFromHash());
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-  const open = (id: string) => {
-    window.location.hash = id;
-    setProjectId(id);
+  const go = (hash: string) => {
+    window.location.hash = hash;
+    setRoute(routeFromHash());
   };
 
-  const back = () => {
-    window.location.hash = '';
-    setProjectId(null);
+  /** 설정을 바꾸면 어떤 기능이 켜졌는지 다시 확인한다. */
+  const refreshHealth = () => {
+    api.health().then(setHealth).catch(() => undefined);
   };
 
   if (!health) {
     return <div className="loading">서버에 연결하는 중…</div>;
   }
 
-  return projectId ? (
-    <Editor projectId={projectId} health={health} fonts={fonts} onBack={back} />
-  ) : (
-    <ProjectList health={health} onOpen={open} />
-  );
+  if (route.name === 'settings') {
+    return <Settings onBack={() => go('')} onChanged={refreshHealth} />;
+  }
+
+  if (route.name === 'project') {
+    return (
+      <Editor
+        projectId={route.id}
+        health={health}
+        fonts={fonts}
+        onBack={() => go('')}
+        onOpenSettings={() => go('settings')}
+      />
+    );
+  }
+
+  return <ProjectList health={health} onOpen={(id) => go(id)} onOpenSettings={() => go('settings')} />;
 }

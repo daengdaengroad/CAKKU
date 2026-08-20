@@ -6,6 +6,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
 import { config } from './config.js';
 import { projectsRouter } from './routes/projects.js';
+import { settingsRouter } from './routes/settings.js';
 import { systemRouter } from './routes/system.js';
 import { youtubeRouter } from './routes/youtube.js';
 import { isAppError } from './util/errors.js';
@@ -19,6 +20,7 @@ app.use(cors());
 app.use(express.json({ limit: '4mb' }));
 
 app.use('/api', systemRouter);
+app.use('/api', settingsRouter);
 app.use('/api/projects', projectsRouter);
 app.use('/api/youtube', youtubeRouter);
 

@@ -189,3 +189,54 @@ export interface YoutubeStatus {
   connected: boolean;
   channel: { id: string; title: string } | null;
 }
+
+export type TtsProviderName = 'none' | 'google' | 'elevenlabs' | 'openai';
+
+export interface SettingsView {
+  anthropic: {
+    configured: boolean;
+    masked: string;
+    /** app = 화면에서 저장함, env = .env 파일에서 옴 */
+    source: 'app' | 'env' | 'none';
+    model: string;
+  };
+  tts: {
+    provider: TtsProviderName;
+    voiceId: string;
+    google: { credentials: string; configured: boolean };
+    elevenlabs: { configured: boolean; masked: string };
+    openai: { configured: boolean; masked: string };
+  };
+  youtube: {
+    configured: boolean;
+    clientIdMasked: string;
+    redirectUri: string;
+  };
+}
+
+export interface SettingsPatch {
+  anthropicApiKey?: string;
+  anthropicModel?: string;
+  ttsProvider?: TtsProviderName;
+  googleVoice?: string;
+  googleCredentials?: string;
+  elevenlabsApiKey?: string;
+  elevenlabsVoiceId?: string;
+  openaiApiKey?: string;
+  openaiVoice?: string;
+  youtubeClientId?: string;
+  youtubeClientSecret?: string;
+}
+
+export interface VoiceOption {
+  id: string;
+  label: string;
+  note: string;
+}
+
+export interface VoiceList {
+  provider: TtsProviderName;
+  current: string;
+  voices: VoiceOption[];
+  previewText: string;
+}

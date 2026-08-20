@@ -1,5 +1,8 @@
 import type {
   Health,
+  SettingsPatch,
+  SettingsView,
+  VoiceList,
   Project,
   ProjectListItem,
   Timeline,
@@ -38,6 +41,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   health: () => request<Health>('/api/health'),
+
+  getSettings: () => request<SettingsView>('/api/settings'),
+  saveSettings: (patch: SettingsPatch) =>
+    request<{ saved: boolean }>('/api/settings', { method: 'PUT', body: JSON.stringify(patch) }),
+  getVoices: () => request<VoiceList>('/api/tts/voices'),
+
   fonts: () => request<{ family: string }[]>('/api/fonts'),
 
   listProjects: () => request<ProjectListItem[]>('/api/projects'),
@@ -122,6 +131,11 @@ function safeParse(text: string): { error?: string; hint?: string } {
   } catch {
     return {};
   }
+}
+
+/** 목소리 미리듣기 오디오 주소. 서버가 샘플을 만들어 돌려준다. */
+export function voicePreviewUrl(voiceId: string): string {
+  return `/api/tts/preview?voice=${encodeURIComponent(voiceId)}`;
 }
 
 /** 프로젝트 폴더 안의 파일을 브라우저에서 받아볼 수 있는 URL 로 */

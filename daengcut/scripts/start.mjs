@@ -122,7 +122,15 @@ async function waitForServer(timeoutMs = 60_000) {
   return false;
 }
 
+/** 화면에서 저장한 설정과 .env 둘 중 한 곳에라도 키가 있으면 된다. */
 function hasAnthropicKey() {
+  try {
+    const saved = JSON.parse(fs.readFileSync(path.join(root, 'workspace', 'settings.json'), 'utf8'));
+    if (saved.anthropicApiKey) return true;
+  } catch {
+    /* 아직 설정한 적 없음 */
+  }
+
   try {
     const env = fs.readFileSync(path.join(root, '.env'), 'utf8');
     return /^ANTHROPIC_API_KEY[ \t]*=[ \t]*\S+/m.test(env);
@@ -204,9 +212,9 @@ if (!ready) {
   say('');
 
   if (!hasAnthropicKey()) {
-    say('   ※ 대본을 자동으로 쓰게 하려면 API 키가 필요합니다.');
-    say('     .env 파일을 메모장으로 열어 ANTHROPIC_API_KEY= 뒤에');
-    say('     키를 붙여넣고 이 창을 닫았다 다시 실행하세요.');
+    say('   ※ 자막을 자동으로 쓰게 하려면 API 키가 하나 필요합니다.');
+    say('     방금 열린 화면 오른쪽 위 [⚙ 설정] 을 누르면 넣는 방법이 안내됩니다.');
+    say('     여기서 넣으면 이 창을 껐다 켤 필요 없이 바로 적용됩니다.');
     say('     (키 없이도 컷 편집과 자막 직접 입력은 됩니다)');
     say('');
   }

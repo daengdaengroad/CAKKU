@@ -5,6 +5,7 @@ import type { Health, ProjectListItem } from '../types';
 interface Props {
   health: Health;
   onOpen: (projectId: string) => void;
+  onOpenSettings: () => void;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -18,7 +19,7 @@ const STATUS_LABEL: Record<string, string> = {
   error: '오류',
 };
 
-export function ProjectList({ health, onOpen }: Props) {
+export function ProjectList({ health, onOpen, onOpenSettings }: Props) {
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [uploading, setUploading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,16 +56,24 @@ export function ProjectList({ health, onOpen }: Props) {
   return (
     <div className="project-list">
       <header className="list-head">
-        <h1>댕컷</h1>
-        <p>찍어둔 영상을 넣으면 숏츠로 만들어 드립니다.</p>
+        <div>
+          <h1>댕컷</h1>
+          <p>찍어둔 영상을 넣으면 숏츠로 만들어 드립니다.</p>
+        </div>
+        <button type="button" className="settings-button" onClick={onOpenSettings}>
+          ⚙ 설정
+        </button>
       </header>
 
       {health.hints.length > 0 && (
-        <ul className="hint-list">
-          {health.hints.map((hint) => (
-            <li key={hint}>{hint}</li>
-          ))}
-        </ul>
+        <button type="button" className="hint-list" onClick={onOpenSettings}>
+          <span className="hint-title">아직 켜지지 않은 기능이 있습니다 — 눌러서 설정하기</span>
+          <ul>
+            {health.hints.map((hint) => (
+              <li key={hint}>{hint}</li>
+            ))}
+          </ul>
+        </button>
       )}
 
       <div

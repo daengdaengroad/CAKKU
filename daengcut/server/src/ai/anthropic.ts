@@ -2,7 +2,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { config } from '../config.js';
 import { AppError } from '../util/errors.js';
 
-let client: Anthropic | null = null;
+// 화면에서 키를 바꿀 수 있으므로, 어떤 키로 만든 클라이언트인지 같이 들고 있는다.
+let cached: { key: string; client: Anthropic } | null = null;
 
 /** API 키가 없으면 AI 기능만 꺼진다. 편집·렌더링은 키 없이도 동작한다. */
 export function isAiConfigured(): boolean {
@@ -17,10 +18,11 @@ export function anthropic(): Anthropic {
       '.env 파일의 ANTHROPIC_API_KEY 를 채운 뒤 서버를 다시 시작하세요. (https://console.anthropic.com)',
     );
   }
-  if (!client) {
-    client = new Anthropic({ apiKey: config.anthropic.apiKey });
+  const key = config.anthropic.apiKey;
+  if (cached?.key !== key) {
+    cached = { key, client: new Anthropic({ apiKey: key }) };
   }
-  return client;
+  return cached.client;
 }
 
 /** SDK 예외를 사용자에게 보여줄 만한 한국어 메시지로 바꾼다. */

@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Router } from 'express';
 import { config } from '../config.js';
+import { fontDir } from '../paths.js';
 import { isAiConfigured } from '../ai/anthropic.js';
 import { isTtsConfigured } from '../ai/tts.js';
 import { availableFonts, resolveFont } from '../render/fonts.js';
@@ -10,7 +11,7 @@ import { AppError } from '../util/errors.js';
 
 export const systemRouter = Router();
 
-const FONT_DIR = path.resolve(import.meta.dirname, '..', '..', '..', 'assets', 'fonts');
+const FONT_DIR = fontDir;
 
 /**
  * UI 가 첫 화면에서 "무엇이 준비됐고 무엇이 빠졌는지" 안내하기 위한 엔드포인트.
@@ -39,10 +40,10 @@ systemRouter.get('/health', (_req, res) => {
       fonts: koreanFonts.length > 0,
     },
     hints: [
-      isAiConfigured() ? null : '.env 의 ANTHROPIC_API_KEY 를 채우면 대본을 자동으로 써줍니다.',
-      isTtsConfigured() ? null : '.env 의 TTS_PROVIDER 를 설정하면 내레이션 목소리가 들어갑니다.',
-      koreanFonts.length > 0 ? null : 'npm run setup 을 실행해 자막용 한글 폰트를 받아주세요.',
-      config.youtube.clientId ? null : '.env 의 YOUTUBE_CLIENT_ID/SECRET 을 채우면 바로 업로드됩니다.',
+      isAiConfigured() ? null : '설정에서 API 키를 넣으면 대본과 자막을 자동으로 써줍니다.',
+      isTtsConfigured() ? null : '설정에서 목소리를 고르면 내레이션이 들어갑니다. (없어도 됩니다)',
+      koreanFonts.length > 0 ? null : '자막용 한글 폰트가 없습니다. npm run setup 을 실행해 주세요.',
+      config.youtube.clientId ? null : '설정에서 유튜브를 연결하면 버튼 하나로 올라갑니다. (없어도 됩니다)',
     ].filter(Boolean),
   });
 });

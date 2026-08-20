@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { ensureProjectDirs, projectDir } from '../config.js';
+import { fontDir } from '../paths.js';
 import { analyzeSource } from '../media/analyze.js';
 import { extractFrames } from '../media/frames.js';
 import { probe } from '../media/probe.js';
@@ -33,8 +34,7 @@ import { subProgress } from './runner.js';
 
 const log = logger('pipeline');
 
-/** assets/fonts 의 절대경로 (server/src/jobs → daengcut/assets/fonts) */
-const FONT_DIR = path.resolve(import.meta.dirname, '..', '..', '..', 'assets', 'fonts');
+const FONT_DIR = fontDir;
 
 // ── 1단계: 업로드된 원본 읽어들이기 ─────────────────────────────────
 export interface IncomingFile {

@@ -1,64 +1,89 @@
 import path from 'node:path';
 import fs from 'node:fs';
-import dotenv from 'dotenv';
+import { repoRoot, workspaceDir } from './paths.js';
+import { readSettings } from './store/settings.js';
+import type { TtsProviderName } from './store/settings.js';
 
-/** daengcut/ 폴더. server/src 와 server/dist 어느 쪽에서 실행해도 같은 곳을 가리킨다. */
-const repoRoot = path.resolve(import.meta.dirname, '..', '..');
-
-// dotenv 는 기본적으로 실행 위치(cwd)에서 .env 를 찾는다.
-// 서버는 server/ 안에서 실행되므로 경로를 명시하지 않으면 daengcut/.env 를 영영 못 읽는다.
-// (이미 셸에 설정된 환경변수는 그대로 우선한다)
-dotenv.config({ path: path.join(repoRoot, '.env') });
-
-function resolveWorkspace(): string {
-  const raw = process.env.DAENGCUT_WORKSPACE?.trim() || './workspace';
-  const abs = path.isAbsolute(raw) ? raw : path.resolve(repoRoot, raw);
-  fs.mkdirSync(abs, { recursive: true });
-  return abs;
+/**
+ * 설정값 하나를 읽는 순서: 화면에서 저장한 값 → .env → 기본값.
+ * 게터로 만들어 두어 화면에서 설정을 바꾸면 서버를 껐다 켜지 않아도 바로 반영된다.
+ */
+function pick(settingsValue: string | undefined, envKey: string, fallback = ''): string {
+  const fromSettings = settingsValue?.trim();
+  if (fromSettings) return fromSettings;
+  return process.env[envKey]?.trim() || fallback;
 }
 
 export const config = {
-  port: Number(process.env.PORT || 4000),
-  workspace: resolveWorkspace(),
+  get port(): number {
+    return Number(process.env.PORT || 4000);
+  },
+
+  workspace: workspaceDir,
 
   anthropic: {
-    apiKey: process.env.ANTHROPIC_API_KEY?.trim() || '',
-    model: process.env.ANTHROPIC_MODEL?.trim() || 'claude-opus-5',
+    get apiKey(): string {
+      return pick(readSettings().anthropicApiKey, 'ANTHROPIC_API_KEY');
+    },
+    get model(): string {
+      return pick(readSettings().anthropicModel, 'ANTHROPIC_MODEL', 'claude-opus-5');
+    },
   },
 
   tts: {
-    provider: (process.env.TTS_PROVIDER?.trim() || 'none') as
-      | 'none'
-      | 'google'
-      | 'elevenlabs'
-      | 'openai',
+    get provider(): TtsProviderName {
+      return pick(readSettings().ttsProvider, 'TTS_PROVIDER', 'none') as TtsProviderName;
+    },
     google: {
-      voice: process.env.GOOGLE_TTS_VOICE?.trim() || 'ko-KR-Chirp3-HD-Leda',
-      credentials: process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim() || '',
+      get voice(): string {
+        return pick(readSettings().googleVoice, 'GOOGLE_TTS_VOICE', 'ko-KR-Chirp3-HD-Leda');
+      },
+      get credentials(): string {
+        return pick(readSettings().googleCredentials, 'GOOGLE_APPLICATION_CREDENTIALS');
+      },
     },
     elevenlabs: {
-      apiKey: process.env.ELEVENLABS_API_KEY?.trim() || '',
-      voiceId: process.env.ELEVENLABS_VOICE_ID?.trim() || '',
+      get apiKey(): string {
+        return pick(readSettings().elevenlabsApiKey, 'ELEVENLABS_API_KEY');
+      },
+      get voiceId(): string {
+        return pick(readSettings().elevenlabsVoiceId, 'ELEVENLABS_VOICE_ID');
+      },
     },
     openai: {
-      apiKey: process.env.OPENAI_API_KEY?.trim() || '',
-      voice: process.env.OPENAI_TTS_VOICE?.trim() || 'nova',
+      get apiKey(): string {
+        return pick(readSettings().openaiApiKey, 'OPENAI_API_KEY');
+      },
+      get voice(): string {
+        return pick(readSettings().openaiVoice, 'OPENAI_TTS_VOICE', 'nova');
+      },
     },
   },
 
   youtube: {
-    clientId: process.env.YOUTUBE_CLIENT_ID?.trim() || '',
-    clientSecret: process.env.YOUTUBE_CLIENT_SECRET?.trim() || '',
-    redirectUri:
-      process.env.YOUTUBE_REDIRECT_URI?.trim() ||
-      'http://localhost:4000/api/youtube/callback',
+    get clientId(): string {
+      return pick(readSettings().youtubeClientId, 'YOUTUBE_CLIENT_ID');
+    },
+    get clientSecret(): string {
+      return pick(readSettings().youtubeClientSecret, 'YOUTUBE_CLIENT_SECRET');
+    },
+    get redirectUri(): string {
+      return (
+        process.env.YOUTUBE_REDIRECT_URI?.trim() ||
+        `http://localhost:${process.env.PORT || 4000}/api/youtube/callback`
+      );
+    },
   },
 
   bin: {
-    ffmpeg: process.env.FFMPEG_PATH?.trim() || '',
-    ffprobe: process.env.FFPROBE_PATH?.trim() || '',
+    get ffmpeg(): string {
+      return process.env.FFMPEG_PATH?.trim() || '';
+    },
+    get ffprobe(): string {
+      return process.env.FFPROBE_PATH?.trim() || '';
+    },
   },
-} as const;
+};
 
 /** 프로젝트 하나가 쓰는 디렉터리 구조. 전부 workspace 아래에 격리된다. */
 export function projectDir(projectId: string) {
@@ -79,3 +104,5 @@ export function ensureProjectDirs(projectId: string) {
   for (const dir of Object.values(dirs)) fs.mkdirSync(dir, { recursive: true });
   return dirs;
 }
+
+export { repoRoot };
