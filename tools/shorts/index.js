@@ -119,6 +119,9 @@ function loadConfig(args) {
   if (!config.menus || config.menus.length < 1) throw new Error('메뉴가 없습니다 (--menus "메뉴1,메뉴2").');
 
   config.photos = collectPhotos(config.photos);
+  // 문장 수는 기본적으로 사진 수와 같다. 사진이 부족하면 --lines 로 늘려서
+  // 같은 사진을 다른 움직임으로 재사용한다 (사진 2~3장만 받는 매장 대응).
+  config.lines = Math.max(2, Number(args.lines || config.lines || config.photos.length));
   if (config.music && !fs.existsSync(config.music)) throw new Error(`배경음악 파일 없음: ${config.music}`);
   return config;
 }
@@ -159,7 +162,8 @@ async function main() {
   fs.mkdirSync(outDir, { recursive: true });
   fs.mkdirSync(workDir, { recursive: true });
 
-  console.log(`\n■ ${config.storeName} / ${config.menus.join(', ')} / 사진 ${config.photos.length}장\n`);
+  const reuse = config.lines > config.photos.length ? ` (사진 ${config.photos.length}장을 ${config.lines}컷으로 재사용)` : '';
+  console.log(`\n■ ${config.storeName} / ${config.menus.join(', ')} / 사진 ${config.photos.length}장${reuse}\n`);
 
   await timed('ffmpeg 확인', () => checkTools());
 
@@ -168,7 +172,7 @@ async function main() {
       storeName: config.storeName,
       menus: config.menus,
       note: config.note,
-      lines: config.photos.length,
+      lines: config.lines,
     })
   );
   console.log(`    (${script.source})`);
