@@ -46,3 +46,7 @@ app-example
 # generated native folders
 /ios
 /android
+
+# 쇼츠 생성기 결과물
+/tools/shorts/out
+/tools/shorts/.env

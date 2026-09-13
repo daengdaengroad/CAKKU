@@ -1,0 +1,12 @@
+{
+  "storeName": "화정동 손칼국수",
+  "menus": ["바지락 손칼국수", "들깨 수제비"],
+  "note": "20년째 같은 자리, 매일 아침 반죽하는 동네 단골집",
+  "photos": [
+    "samples/1-외관.jpg",
+    "samples/2-메뉴A.jpg",
+    "samples/3-내부.jpg",
+    "samples/4-메뉴B.jpg",
+    "samples/5-사장님.jpg"
+  ]
+}
