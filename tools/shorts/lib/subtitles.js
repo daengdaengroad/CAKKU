@@ -44,7 +44,8 @@ function header(fontName) {
     'ScriptType: v4.00+',
     `PlayResX: ${PLAY_W}`,
     `PlayResY: ${PLAY_H}`,
-    'WrapStyle: 2',
+    // 0 = 자동 줄바꿈 허용. 손으로 넣은 \N 이 우선이고, 긴 자막이 화면 밖으로 나가는 것만 막는다.
+    'WrapStyle: 0',
     'ScaledBorderAndShadow: yes',
     'YCbCr Matrix: TV.709',
     '',

@@ -3,12 +3,17 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { ffmpeg, durationOf } = require('./ffmpeg');
 const { CHARS_PER_SECOND } = require('./script');
 
 const ENDPOINT = 'https://texttospeech.googleapis.com/v1/text:synthesize';
 const DEFAULT_VOICE = process.env.TTS_VOICE || 'ko-KR-Neural2-C';
 const DEFAULT_RATE = Number(process.env.TTS_SPEAKING_RATE || 1.05);
+
+function cacheKey({ text, engine, voice, rate }) {
+  return crypto.createHash('sha1').update(`${engine}|${voice}|${rate}|${text}`).digest('hex').slice(0, 16);
+}
 
 async function synthesizeGoogle({ text, outFile, apiKey, voice, rate }) {
   const res = await fetch(`${ENDPOINT}?key=${apiKey}`, {
@@ -48,8 +53,12 @@ async function synthesizeSilent({ text, outFile }) {
  * 문장 배열 -> { engine, clips: [{ index, text, file }] }
  * 길이는 measureClips()에서 따로 잰다 (단계별 소요 시간을 나눠 재기 위해).
  */
-async function synthesizeLines(lines, { outDir, mode = 'auto', voice = DEFAULT_VOICE, rate = DEFAULT_RATE } = {}) {
+async function synthesizeLines(
+  lines,
+  { outDir, cacheDir = null, mode = 'auto', voice = DEFAULT_VOICE, rate = DEFAULT_RATE } = {}
+) {
   fs.mkdirSync(outDir, { recursive: true });
+  if (cacheDir) fs.mkdirSync(cacheDir, { recursive: true });
   const apiKey = process.env.GOOGLE_TTS_API_KEY || process.env.GOOGLE_API_KEY;
 
   let engine = mode;
@@ -59,17 +68,30 @@ async function synthesizeLines(lines, { outDir, mode = 'auto', voice = DEFAULT_V
   }
 
   const clips = [];
+  let reused = 0;
   for (let i = 0; i < lines.length; i += 1) {
     const text = lines[i];
     const file = path.join(outDir, `line-${String(i + 1).padStart(2, '0')}.mp3`);
-    if (engine === 'google') {
-      await synthesizeGoogle({ text, outFile: file, apiKey, voice, rate });
+    // 문장이 그대로면 다시 합성하지 않는다. 한 문장만 고쳐도 전체를 다시 부르면
+    // 돈과 시간이 그만큼 더 든다 (구글 TTS는 글자 수로 과금한다).
+    const cacheFile = cacheDir
+      ? path.join(cacheDir, `${cacheKey({ text, engine, voice, rate })}.mp3`)
+      : null;
+
+    if (cacheFile && fs.existsSync(cacheFile)) {
+      fs.copyFileSync(cacheFile, file);
+      reused += 1;
     } else {
-      await synthesizeSilent({ text, outFile: file });
+      if (engine === 'google') {
+        await synthesizeGoogle({ text, outFile: file, apiKey, voice, rate });
+      } else {
+        await synthesizeSilent({ text, outFile: file });
+      }
+      if (cacheFile) fs.copyFileSync(file, cacheFile);
     }
     clips.push({ index: i, text, file });
   }
-  return { engine, clips };
+  return { engine, clips, reused, synthesized: lines.length - reused };
 }
 
 // 각 mp3의 실제 길이(초)를 ffprobe로 잰다. 자막/사진 타이밍의 기준값.

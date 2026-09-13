@@ -19,6 +19,7 @@ const { checkTools, durationOf } = require('./lib/ffmpeg');
 const { generateScript } = require('./lib/script');
 const { synthesizeLines, measureClips } = require('./lib/tts');
 const { buildAss } = require('./lib/subtitles');
+const { writeDraft, readDraft, resolveLinePhoto } = require('./lib/draft');
 const { renderVideo, pickFont } = require('./lib/render');
 
 const ROOT = __dirname;
@@ -97,7 +98,11 @@ function collectPhotos(input) {
 
 function loadConfig(args) {
   let config = {};
-  if (args.input) {
+  if (args.script) {
+    const draft = readDraft(args.script);
+    config = { ...draft, script: draft.lines };
+    delete config.lines;
+  } else if (args.input) {
     const file = path.resolve(args.input);
     config = JSON.parse(fs.readFileSync(file, 'utf8'));
     // 입력 JSON 안의 상대 경로는 그 JSON 파일 기준으로 푼다.
@@ -121,7 +126,11 @@ function loadConfig(args) {
   config.photos = collectPhotos(config.photos);
   // 문장 수는 기본적으로 사진 수와 같다. 사진이 부족하면 --lines 로 늘려서
   // 같은 사진을 다른 움직임으로 재사용한다 (사진 2~3장만 받는 매장 대응).
-  config.lines = Math.max(2, Number(args.lines || config.lines || config.photos.length));
+  // --script 로 확정된 대본을 준 경우엔 그 문장 수를 그대로 따른다.
+  config.lineCount = Math.max(
+    2,
+    Number(args.lines || config.lineCount || (config.script ? config.script.length : config.photos.length))
+  );
   if (config.music && !fs.existsSync(config.music)) throw new Error(`배경음악 파일 없음: ${config.music}`);
   return config;
 }
@@ -162,28 +171,57 @@ async function main() {
   fs.mkdirSync(outDir, { recursive: true });
   fs.mkdirSync(workDir, { recursive: true });
 
-  const reuse = config.lines > config.photos.length ? ` (사진 ${config.photos.length}장을 ${config.lines}컷으로 재사용)` : '';
+  const reuse = config.lineCount > config.photos.length ? ` (사진 ${config.photos.length}장을 ${config.lineCount}컷으로 재사용)` : '';
   console.log(`\n■ ${config.storeName} / ${config.menus.join(', ')} / 사진 ${config.photos.length}장${reuse}\n`);
 
   await timed('ffmpeg 확인', () => checkTools());
 
-  const script = await timed('대본 생성', () =>
-    generateScript({
+  const script = config.script
+    ? { source: `파일: ${path.basename(path.resolve(args.script))}`, lines: config.script }
+    : await timed('대본 생성', async () => {
+        const generated = await generateScript({
+          storeName: config.storeName,
+          menus: config.menus,
+          note: config.note,
+          lines: config.lineCount,
+        });
+        return { source: generated.source, lines: generated.lines.map((say) => ({ say, caption: '', photo: '' })) };
+      });
+  console.log(`    (${script.source})`);
+  script.lines.forEach((line, i) => {
+    const caption = line.caption && line.caption !== line.say ? `   [자막: ${line.caption}]` : '';
+    console.log(`    ${i + 1}. ${line.say}${caption}`);
+  });
+
+  // 대본만 뽑고 멈춘다. 사람이 고친 뒤 --script 로 다시 부르는 흐름.
+  if (args.draft) {
+    const draftFile = writeDraft(path.join(outDir, `${slugify(config.storeName)}.script.json`), {
       storeName: config.storeName,
       menus: config.menus,
+      photos: config.photos,
       note: config.note,
-      lines: config.lines,
-    })
-  );
-  console.log(`    (${script.source})`);
-  script.lines.forEach((line, i) => console.log(`    ${i + 1}. ${line}`));
+      lines: script.lines,
+    });
+    console.log('\n──────── 대본 초안 ────────');
+    console.log(`  ${draftFile}`);
+    console.log('  이 파일에서 문장(say), 자막(caption), 사진 배정(photo)을 고칠 수 있습니다.');
+    console.log('  다 고쳤으면:');
+    console.log(`    npm run shorts -- --script "${draftFile}"`);
+    console.log('───────────────────────────\n');
+    return;
+  }
 
   const tts = await timed(`TTS 합성 (${script.lines.length}문장)`, () =>
-    synthesizeLines(script.lines, {
-      outDir: path.join(workDir, 'audio'),
-      mode: args.tts || 'auto',
-    })
+    synthesizeLines(
+      script.lines.map((line) => line.say),
+      {
+        outDir: path.join(workDir, 'audio'),
+        cacheDir: args['no-cache'] ? null : path.join(outDir, '.tts-cache'),
+        mode: args.tts || 'auto',
+      }
+    )
   );
+  if (tts.reused) console.log(`    (새로 합성 ${tts.synthesized}문장 / 안 바뀌어서 재사용 ${tts.reused}문장)`);
   if (tts.engine === 'offline') {
     console.log('    ! offline 모드: 무음 mp3입니다. 목소리를 넣으려면 GOOGLE_TTS_API_KEY 를 설정하세요.');
   }
@@ -193,7 +231,7 @@ async function main() {
 
   // 사진 노출 시간 = 그 문장 음성 길이 + 숨 쉴 틈. 마지막 컷만 여운을 더 준다.
   const segments = clips.map((clip, i) => ({
-    photo: config.photos[i % config.photos.length],
+    photo: resolveLinePhoto(script.lines[i].photo, config.photos, i),
     seconds: clip.seconds + gap + (i === clips.length - 1 ? tail : 0),
   }));
 
@@ -201,7 +239,13 @@ async function main() {
   const timeline = clips.map((clip, i) => {
     const start = cursor;
     cursor += segments[i].seconds;
-    return { ...clip, start, end: start + clip.seconds + gap * 0.8 };
+    return {
+      ...clip,
+      say: script.lines[i].say,
+      text: script.lines[i].caption || script.lines[i].say,
+      start,
+      end: start + clip.seconds + gap * 0.8,
+    };
   });
   const totalSeconds = cursor;
 
@@ -260,7 +304,14 @@ async function main() {
     photos: config.photos,
     scriptSource: script.source,
     ttsEngine: tts.engine,
-    lines: timeline.map((t) => ({ text: t.text, seconds: t.seconds, start: t.start, end: t.end })),
+    lines: timeline.map((t, i) => ({
+      say: t.say,
+      caption: t.text,
+      photo: path.basename(segments[i].photo),
+      seconds: t.seconds,
+      start: t.start,
+      end: t.end,
+    })),
     output: { file: outFile, seconds: actualSeconds, sizeMb: Number(sizeMb.toFixed(2)), preset, crf },
     timings: Object.fromEntries(timings.map((t) => [t.label, Number(t.seconds.toFixed(2))])),
     totalSeconds: Number(wall.toFixed(2)),
